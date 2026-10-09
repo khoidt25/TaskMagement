@@ -3,6 +3,7 @@ package com.example.tasksmanagement.specification;
 import com.example.tasksmanagement.entity.Task;
 import com.example.tasksmanagement.lib.TaskStatus;
 import org.springframework.data.jpa.domain.Specification;
+
 import java.time.LocalDate;
 
 public final class TaskSpecification {

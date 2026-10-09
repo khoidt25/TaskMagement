@@ -11,6 +11,10 @@ import org.springframework.data.web.PageableDefault;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springdoc.core.annotations.ParameterObject;
+import java.time.LocalDate;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -162,4 +166,24 @@ public class TaskController {
 
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Search tasks by keyword. * * Example: * GET /api/tasks/search?keyword=login&page=0&size=10
+     */
+    @GetMapping("/search")
+    public Page<Task> search(@RequestParam(required = false) String keyword,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+        return taskService.search(keyword, pageable);
+    }
+
+    /**
+     * Filter tasks using multiple conditions. * * Example: * GET /api/tasks/filter?status=IN_PROGRESS&projectId=1
+     */
+    @GetMapping("/filter")
+    public Page<Task> filter(@RequestParam(required = false) String keyword, @RequestParam(required = false) TaskStatus status, @RequestParam(required = false) Long projectId, @RequestParam(required = false) Long customerId, @RequestParam(required = false) Long userId, @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate deadlineFrom, @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate deadlineTo,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+        if (deadlineFrom != null && deadlineTo != null && deadlineFrom.isAfter(deadlineTo)) {
+            throw new IllegalArgumentException("deadlineFrom must be before or equal to deadlineTo");
+        }
+        return taskService.filter(keyword, status, projectId, customerId, userId, deadlineFrom, deadlineTo, pageable);
+    }
+
 }
