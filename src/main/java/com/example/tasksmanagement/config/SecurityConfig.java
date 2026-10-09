@@ -115,7 +115,7 @@ public class SecurityConfig {
 
                 // Không bật HTTP Basic vì ứng dụng đang dùng session
                 .httpBasic(basic -> basic.disable())
-
+                .cors(Customizer.withDefaults())
                 // Đăng xuất và hủy session
                 .logout(logout -> logout.logoutUrl("/api/auth/logout").invalidateHttpSession(true).clearAuthentication(true).deleteCookies("JSESSIONID"));
 
