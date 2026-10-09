@@ -35,7 +35,7 @@ public class TaskController {
      * GET /api/tasks?page=0&size=20&sort=taskId,desc
      */
     @GetMapping
-    public Page<Task> getAll(@PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getAll(@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getAll(pageable);
     }
@@ -70,7 +70,7 @@ public class TaskController {
      * Supports pagination.
      */
     @GetMapping("/status/{status}")
-    public Page<Task> getByStatus(@PathVariable TaskStatus status, @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByStatus(@PathVariable TaskStatus status,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByStatus(status, pageable);
     }
@@ -81,7 +81,7 @@ public class TaskController {
      * GET /api/tasks/project/1
      */
     @GetMapping("/project/{projectId}")
-    public Page<Task> getByProject(@PathVariable Long projectId, @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByProject(@PathVariable Long projectId,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByProject(projectId, pageable);
     }
@@ -92,7 +92,7 @@ public class TaskController {
      * GET /api/tasks/customer/1
      */
     @GetMapping("/customer/{customerId}")
-    public Page<Task> getByCustomer(@PathVariable Long customerId, @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByCustomer(@PathVariable Long customerId,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByCustomer(customerId, pageable);
     }
@@ -103,7 +103,7 @@ public class TaskController {
      * GET /api/tasks/user/1
      */
     @GetMapping("/user/{userId}")
-    public Page<Task> getByUser(@PathVariable Long userId, @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByUser(@PathVariable Long userId,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByUser(userId, pageable);
     }
@@ -114,7 +114,7 @@ public class TaskController {
      * GET /api/tasks/redmine/16574
      */
     @GetMapping("/redmine/{issueId}")
-    public Page<Task> getByRedmine(@PathVariable Long issueId, @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByRedmine(@PathVariable Long issueId,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByRedmine(issueId, pageable);
     }
@@ -125,7 +125,7 @@ public class TaskController {
      * GET /api/tasks/overdue
      */
     @GetMapping("/overdue")
-    public Page<Task> getOverdue(@PageableDefault(page = 0, size = 10, sort = "deadline", direction = Sort.Direction.ASC) Pageable pageable) {
+    public Page<Task> getOverdue(@ParameterObject @PageableDefault(page = 0, size = 10, sort = "deadline", direction = Sort.Direction.ASC) Pageable pageable) {
 
         return taskService.getOverdue(pageable);
     }
