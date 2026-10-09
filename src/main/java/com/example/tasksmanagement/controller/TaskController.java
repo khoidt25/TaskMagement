@@ -12,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springdoc.core.annotations.ParameterObject;
+
 import java.time.LocalDate;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -70,7 +71,7 @@ public class TaskController {
      * Supports pagination.
      */
     @GetMapping("/status/{status}")
-    public Page<Task> getByStatus(@PathVariable TaskStatus status,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByStatus(@PathVariable TaskStatus status, @ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByStatus(status, pageable);
     }
@@ -81,7 +82,7 @@ public class TaskController {
      * GET /api/tasks/project/1
      */
     @GetMapping("/project/{projectId}")
-    public Page<Task> getByProject(@PathVariable Long projectId,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByProject(@PathVariable Long projectId, @ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByProject(projectId, pageable);
     }
@@ -92,7 +93,7 @@ public class TaskController {
      * GET /api/tasks/customer/1
      */
     @GetMapping("/customer/{customerId}")
-    public Page<Task> getByCustomer(@PathVariable Long customerId,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByCustomer(@PathVariable Long customerId, @ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByCustomer(customerId, pageable);
     }
@@ -103,7 +104,7 @@ public class TaskController {
      * GET /api/tasks/user/1
      */
     @GetMapping("/user/{userId}")
-    public Page<Task> getByUser(@PathVariable Long userId,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByUser(@PathVariable Long userId, @ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByUser(userId, pageable);
     }
@@ -114,7 +115,7 @@ public class TaskController {
      * GET /api/tasks/redmine/16574
      */
     @GetMapping("/redmine/{issueId}")
-    public Page<Task> getByRedmine(@PathVariable Long issueId,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> getByRedmine(@PathVariable Long issueId, @ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return taskService.getByRedmine(issueId, pageable);
     }
@@ -171,7 +172,7 @@ public class TaskController {
      * Search tasks by keyword. * * Example: * GET /api/tasks/search?keyword=login&page=0&size=10
      */
     @GetMapping("/search")
-    public Page<Task> search(@RequestParam(required = false) String keyword,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> search(@RequestParam(required = false) String keyword, @ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
         return taskService.search(keyword, pageable);
     }
 
@@ -179,7 +180,7 @@ public class TaskController {
      * Filter tasks using multiple conditions. * * Example: * GET /api/tasks/filter?status=IN_PROGRESS&projectId=1
      */
     @GetMapping("/filter")
-    public Page<Task> filter(@RequestParam(required = false) String keyword, @RequestParam(required = false) TaskStatus status, @RequestParam(required = false) Long projectId, @RequestParam(required = false) Long customerId, @RequestParam(required = false) Long userId, @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate deadlineFrom, @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate deadlineTo,@ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
+    public Page<Task> filter(@RequestParam(required = false) String keyword, @RequestParam(required = false) TaskStatus status, @RequestParam(required = false) Long projectId, @RequestParam(required = false) Long customerId, @RequestParam(required = false) Long userId, @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate deadlineFrom, @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate deadlineTo, @ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
         if (deadlineFrom != null && deadlineTo != null && deadlineFrom.isAfter(deadlineTo)) {
             throw new IllegalArgumentException("deadlineFrom must be before or equal to deadlineTo");
         }

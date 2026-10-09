@@ -18,6 +18,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.example.tasksmanagement.dto.MyAssignmentUpdateRequest;
+import com.example.tasksmanagement.entity.User;
+import com.example.tasksmanagement.lib.TaskStatus;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class TaskMemberService {
 
@@ -176,4 +181,43 @@ public class TaskMemberService {
 
         return response;
     }
+
+    @Transactional
+    public TaskMember updateMyAssignment(String username, Long memberId, MyAssignmentUpdateRequest request) {
+
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        TaskMember member = memberRepository.findById(memberId).orElseThrow(() -> new IllegalArgumentException("Assignment not found"));
+
+        if (!member.getUserId().equals(user.getUserId())) {
+            throw new org.springframework.security.access.AccessDeniedException("You cannot update another user's assignment");
+        }
+
+        if (request.getProgress() != null && (request.getProgress() < 0 || request.getProgress() > 100)) {
+            throw new IllegalArgumentException("Progress must be between 0 and 100");
+        }
+
+        if (request.getStatus() != null) {
+            try {
+                member.setStatus(TaskStatus.valueOf(request.getStatus().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid task status");
+            }
+        }
+
+        if (request.getProgress() != null) {
+            member.setProgress(request.getProgress());
+        }
+
+        if (request.getAssignedWork() != null) {
+            member.setAssignedWork(request.getAssignedWork());
+        }
+
+        if (request.getNote() != null) {
+            member.setNote(request.getNote());
+        }
+
+        return memberRepository.save(member);
+    }
+
 }

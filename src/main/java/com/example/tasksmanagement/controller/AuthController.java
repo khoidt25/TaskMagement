@@ -1,4 +1,3 @@
-
 package com.example.tasksmanagement.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,9 +24,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
 
-    public AuthController(
-            AuthenticationManager authenticationManager,
-            SecurityContextRepository securityContextRepository) {
+    public AuthController(AuthenticationManager authenticationManager, SecurityContextRepository securityContextRepository) {
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
     }
@@ -36,37 +33,21 @@ public class AuthController {
      * POST /api/auth/login
      */
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(
-            @RequestBody LoginRequest body,
-            HttpServletRequest request,
-            HttpServletResponse response) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest body, HttpServletRequest request, HttpServletResponse response) {
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        body.getUsername(),
-                        body.getPassword()
-                )
-        );
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(body.getUsername(), body.getPassword()));
 
-        SecurityContext context =
-                SecurityContextHolder.createEmptyContext();
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
 
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
 
-        securityContextRepository.saveContext(
-                context, request, response
-        );
+        securityContextRepository.saveContext(context, request, response);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("message", "Login successful");
         result.put("username", authentication.getName());
-        result.put(
-                "roles",
-                authentication.getAuthorities().stream()
-                        .map(authority -> authority.getAuthority())
-                        .collect(Collectors.toList())
-        );
+        result.put("roles", authentication.getAuthorities().stream().map(authority -> authority.getAuthority()).collect(Collectors.toList()));
 
         return ResponseEntity.ok(result);
     }
@@ -75,22 +56,15 @@ public class AuthController {
      * GET /api/auth/me
      */
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> me(
-            Authentication authentication) {
+    public ResponseEntity<Map<String, Object>> me(Authentication authentication) {
 
-        if (authentication == null
-                || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("username", authentication.getName());
-        result.put(
-                "roles",
-                authentication.getAuthorities().stream()
-                        .map(authority -> authority.getAuthority())
-                        .collect(Collectors.toList())
-        );
+        result.put("roles", authentication.getAuthorities().stream().map(authority -> authority.getAuthority()).collect(Collectors.toList()));
 
         return ResponseEntity.ok(result);
     }
