@@ -45,6 +45,15 @@ public class Task {
     @Column(name = "priority_id", nullable = false)
     private Integer priorityId = 2;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "priority_id",
+            referencedColumnName = "priority_id",
+            insertable = false,
+            updatable = false
+    )
+    private Priority priority;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private TaskStatus status = TaskStatus.NOT_STARTED;
@@ -109,5 +118,13 @@ public class Task {
     public void setNote(String v) { note = v; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
+
+    public String getPriorityCode() {
+        return priority != null ? priority.getPriorityCode() : null;
+    }
+
+    public String getPriorityName() {
+        return priority != null ? priority.getPriorityName() : null;
+    }
 }
 
