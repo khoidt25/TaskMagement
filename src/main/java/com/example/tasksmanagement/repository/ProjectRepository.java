@@ -14,4 +14,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByProjectStatus(String projectStatus);
 
     boolean existsByProjectCode(String projectCode);
+
+    List<Project> findAllByOrderByProjectNameAsc();
 }

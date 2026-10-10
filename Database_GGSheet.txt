@@ -1696,6 +1696,49 @@ commit;
 
 select *from app_roles
 
+-- 1. Project mà mỗi Manager được phép quản lý
+CREATE TABLE IF NOT EXISTS manager_projects (
+    manager_id BIGINT NOT NULL
+        REFERENCES users(user_id) ON DELETE CASCADE,
+
+    project_id BIGINT NOT NULL
+        REFERENCES projects(project_id) ON DELETE CASCADE,
+
+    assigned_by BIGINT
+        REFERENCES users(user_id) ON DELETE SET NULL,
+
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (manager_id, project_id)
+);
+
+-- 2. Thành viên mà mỗi Manager được phép quản lý
+CREATE TABLE IF NOT EXISTS manager_members (
+    manager_id BIGINT NOT NULL
+        REFERENCES users(user_id) ON DELETE CASCADE,
+
+    member_id BIGINT NOT NULL
+        REFERENCES users(user_id) ON DELETE CASCADE,
+
+    assigned_by BIGINT
+        REFERENCES users(user_id) ON DELETE SET NULL,
+
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (manager_id, member_id),
+
+    CONSTRAINT chk_manager_not_self
+        CHECK (manager_id <> member_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_manager_projects_project
+    ON manager_projects(project_id, manager_id);
+
+CREATE INDEX IF NOT EXISTS idx_manager_members_member
+    ON manager_members(member_id, manager_id);
+
+COMMIT;
+
 
 
 
