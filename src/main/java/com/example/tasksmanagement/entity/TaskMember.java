@@ -24,6 +24,19 @@ public class TaskMember {
     @Column(name = "task_role_id")
     private Long taskRoleId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "task_role_id",
+            referencedColumnName = "task_role_id",
+            insertable = false,
+            updatable = false
+    )
+    private TaskRole taskRole;
+
+    public TaskRole getTaskRole() {
+        return taskRole;
+    }
+
     @Column(name = "assigned_work", nullable = false, columnDefinition = "TEXT")
     private String assignedWork;
 
