@@ -27,28 +27,24 @@ public class TaskMemberController {
         this.taskMemberService = taskMemberService;
     }
 
-    // 1. Assign một User vào Task
     @PostMapping("/{taskId}/members")
     public ResponseEntity<TaskMemberResponse> assignUser(@PathVariable Long taskId, @RequestBody TaskMember request) {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(taskMemberService.assignUser(taskId, request));
     }
 
-    // 2. Xem tất cả thành viên của Task
     @GetMapping("/{taskId}/members")
     public List<TaskMemberResponse> getMembers(@PathVariable Long taskId) {
 
         return taskMemberService.getByTask(taskId);
     }
 
-    // 3. Sửa Role, công việc, Status, Progress, Deadline, Note
     @PutMapping("/{taskId}/members/{memberId}")
     public ResponseEntity<TaskMemberResponse> updateMember(@PathVariable Long taskId, @PathVariable Long memberId, @RequestBody TaskMember request) {
 
         return taskMemberService.update(taskId, memberId, request).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 4. Xóa thành viên khỏi Task
     @DeleteMapping("/{taskId}/members/{memberId}")
     public ResponseEntity<Void> deleteMember(@PathVariable Long taskId, @PathVariable Long memberId) {
 
@@ -59,14 +55,12 @@ public class TaskMemberController {
         return ResponseEntity.noContent().build();
     }
 
-    // 5. My Task
     @GetMapping("/my/{userId}")
     public List<TaskMemberResponse> getMyTasks(@PathVariable Long userId) {
 
         return taskMemberService.getMyTasks(userId);
     }
 
-    // 6. My Task theo trạng thái
     @GetMapping("/my/{userId}/status/{status}")
     public List<TaskMemberResponse> getMyTasksByStatus(@PathVariable Long userId, @PathVariable TaskStatus status) {
 
@@ -83,7 +77,6 @@ public class TaskMemberController {
         }
     }
 
-    // Xử lý lỗi validation nghiệp vụ
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException exception) {
 
