@@ -24,6 +24,15 @@ public class Task {
     @Column(name = "project_id")
     private Long projectId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "project_id",
+            referencedColumnName = "project_id",
+            insertable = false,
+            updatable = false
+    )
+    private Project project;
+
     @Column(name = "customer_id")
     private Long customerId;
 
@@ -125,6 +134,14 @@ public class Task {
 
     public String getPriorityName() {
         return priority != null ? priority.getPriorityName() : null;
+    }
+
+    public String getProjectName() {
+        return project != null ? project.getProjectName() : null;
+    }
+
+    public String getProjectCode() {
+        return project != null ? project.getProjectCode() : null;
     }
 }
 

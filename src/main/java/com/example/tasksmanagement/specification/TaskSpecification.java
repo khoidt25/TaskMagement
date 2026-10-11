@@ -5,6 +5,9 @@ import com.example.tasksmanagement.lib.TaskStatus;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
+import com.example.tasksmanagement.entity.TaskMember;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 public final class TaskSpecification {
 
@@ -46,5 +49,21 @@ public final class TaskSpecification {
     public static Specification<Task> deadlineTo(LocalDate date) {
         return (root, query, cb) -> date == null ? cb.conjunction() : cb.lessThanOrEqualTo(root.get("deadline"), date);
     }
+
+    public static Specification<Task> assignedToUser(Long userId) {
+        return (root, query, cb) -> {
+            if (userId == null) {
+                return cb.conjunction();
+            }
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<TaskMember> taskMember = subquery.from(TaskMember.class);
+            subquery.select(taskMember.get("taskId"));
+            subquery.where(
+                    cb.equal(taskMember.get("userId"), userId)
+            );
+            return root.get("taskId").in(subquery);
+        };
+    }
+
 }
 

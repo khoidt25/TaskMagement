@@ -102,7 +102,7 @@ public class TaskService {
      */
     public Page<Task> filter(String keyword, TaskStatus status, Long projectId, Long customerId, Long userId, LocalDate deadlineFrom, LocalDate deadlineTo, Pageable pageable) {
 
-        Specification<Task> specification = TaskSpecification.keyword(keyword).and(TaskSpecification.status(status)).and(TaskSpecification.projectId(projectId)).and(TaskSpecification.customerId(customerId)).and(TaskSpecification.createdBy(userId)).and(TaskSpecification.deadlineFrom(deadlineFrom)).and(TaskSpecification.deadlineTo(deadlineTo));
+        Specification<Task> specification = TaskSpecification.keyword(keyword).and(TaskSpecification.status(status)).and(TaskSpecification.projectId(projectId)).and(TaskSpecification.customerId(customerId)).and(TaskSpecification.assignedToUser(userId)).and(TaskSpecification.deadlineFrom(deadlineFrom)).and(TaskSpecification.deadlineTo(deadlineTo));
 
         return taskRepository.findAll(specification, pageable);
     }
