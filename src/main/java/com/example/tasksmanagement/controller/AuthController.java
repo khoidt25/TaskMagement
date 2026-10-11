@@ -1,23 +1,21 @@
+
 package com.example.tasksmanagement.controller;
 
 import com.example.tasksmanagement.entity.User;
 import com.example.tasksmanagement.repository.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.example.tasksmanagement.service.JwtService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,57 +23,94 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
-    private final SecurityContextRepository securityContextRepository;
     private final UserRepository userRepository;
+    private final JwtService jwtService;
 
-    public AuthController(AuthenticationManager authenticationManager, SecurityContextRepository securityContextRepository, UserRepository userRepository) {
+    public AuthController(
+            AuthenticationManager authenticationManager,
+            UserRepository userRepository,
+            JwtService jwtService) {
         this.authenticationManager = authenticationManager;
-        this.securityContextRepository = securityContextRepository;
         this.userRepository = userRepository;
+        this.jwtService = jwtService;
     }
 
-    /**
-     * POST /api/auth/login
-     */
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest body, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<Map<String, Object>> login(
+            @RequestBody LoginRequest body) {
 
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(body.getUsername(), body.getPassword()));
-
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
-
-        securityContextRepository.saveContext(context, request, response);
-
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("Không tìm thấy user")
+        // 1. Xác thực username và password
+        Authentication authentication =
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                body.getUsername(),
+                                body.getPassword()
+                        )
                 );
 
+        // 2. Tạo JWT
+        String token = jwtService.generateToken(
+                authentication.getName()
+        );
+
+        // 3. Lấy thông tin user từ database
+        User user = userRepository
+                .findByUsername(authentication.getName())
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "Không tìm thấy user"
+                        )
+                );
+
+        // 4. Lấy danh sách roles
+        List<String> roles = authentication.getAuthorities()
+                .stream()
+                .map(authority -> authority.getAuthority())
+                .collect(Collectors.toList());
+
+        // 5. Trả về JWT và thông tin user
+        Map<String, Object> userInfo = new LinkedHashMap<>();
+        userInfo.put("userId", user.getUserId());
+        userInfo.put("username", user.getUsername());
+        userInfo.put("roles", roles);
+
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("message", "Login successful");
-        result.put("userId", user.getUserId());
-        result.put("username", authentication.getName());
-        result.put("roles", authentication.getAuthorities().stream().map(authority -> authority.getAuthority()).collect(Collectors.toList()));
+        result.put("accessToken", token);
+        result.put("tokenType", "Bearer");
+        result.put("user", userInfo);
 
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * GET /api/auth/me
-     */
     @GetMapping("/me")
-    public ResponseEntity<Map<String, Object>> me(Authentication authentication) {
+    public ResponseEntity<Map<String, Object>> me(
+            Authentication authentication) {
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .build();
         }
 
+        User user = userRepository
+                .findByUsername(authentication.getName())
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "Không tìm thấy user"
+                        )
+                );
+
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("username", authentication.getName());
-        result.put("roles", authentication.getAuthorities().stream().map(authority -> authority.getAuthority()).collect(Collectors.toList()));
+        result.put("userId", user.getUserId());
+        result.put("username", user.getUsername());
+        result.put(
+                "roles",
+                authentication.getAuthorities()
+                        .stream()
+                        .map(authority -> authority.getAuthority())
+                        .collect(Collectors.toList())
+        );
 
         return ResponseEntity.ok(result);
     }
@@ -101,4 +136,3 @@ public class AuthController {
         }
     }
 }
-
