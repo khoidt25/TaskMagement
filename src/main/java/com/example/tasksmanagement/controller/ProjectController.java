@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -49,9 +50,19 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
-        projectService.deleteProject(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteProject(@PathVariable Long id) {
+        try {
+            if (!projectService.deleteProject(id)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.noContent().build();
+
+        } catch (IllegalStateException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/options")

@@ -5,6 +5,7 @@ import com.example.tasksmanagement.dto.ProjectResponse;
 import com.example.tasksmanagement.entity.Project;
 import com.example.tasksmanagement.repository.ProjectRepository;
 
+import com.example.tasksmanagement.repository.TaskRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -19,9 +20,11 @@ import java.util.Locale;
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final TaskRepository taskRepository;
 
-    public ProjectService(ProjectRepository projectRepository) {
+    public ProjectService(ProjectRepository projectRepository, TaskRepository taskRepository) {
         this.projectRepository = projectRepository;
+        this.taskRepository = taskRepository;
     }
 
     @Transactional(readOnly = true)
@@ -34,7 +37,6 @@ public class ProjectService {
         return projectRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy dự án ID: " + id));
     }
 
-    // Thêm dự án
     @Transactional
     public Project createProject(ProjectRequest request) {
         validateProject(request);
@@ -56,7 +58,6 @@ public class ProjectService {
         return projectRepository.save(project);
     }
 
-    // Cập nhật dự án
     @Transactional
     public Project updateProject(Long id, ProjectRequest request) {
         validateProject(request);
@@ -75,13 +76,26 @@ public class ProjectService {
     }
 
     @Transactional
-    public void deleteProject(Long id) {
+    public boolean deleteProject(Long id) {
+
+        if (id == null || !taskRepository.existsById(id)) {
+            return false;
+        }
+
+        boolean assigned = taskRepository.existsByProjectId(id);
+
+        if (assigned) {
+            throw new IllegalStateException(
+                    "Không thể xóa project đã có công việc."
+            );
+        }
         Project project = getProjectById(id);
+
         project.setProjectStatus("INACTIVE");
         projectRepository.save(project);
+        return true;
     }
 
-    // Danh sách dự án cho dropdown
     @Transactional(readOnly = true)
     public List<ProjectResponse> getProjectOptions() {
         return projectRepository.findByProjectStatus("ACTIVE").stream().sorted((a, b) -> a.getProjectName().compareToIgnoreCase(b.getProjectName())).map(project -> new ProjectResponse(project.getProjectId(), project.getProjectName())).toList();
