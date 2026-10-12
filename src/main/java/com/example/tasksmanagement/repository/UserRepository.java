@@ -3,6 +3,7 @@ package com.example.tasksmanagement.repository;
 import com.example.tasksmanagement.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -10,4 +11,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     boolean existsByUsername(String username);
+
+    List<User> findByUserStatusIgnoreCase(String userStatus);
+
+    List<User> findByRoleIdAndUserStatusIgnoreCase(Long roleId, String userStatus);
 }
