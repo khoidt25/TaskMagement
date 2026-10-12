@@ -24,13 +24,11 @@ public class ProjectService {
         this.projectRepository = projectRepository;
     }
 
-    // Danh sách có phân trang, tìm kiếm và lọc trạng thái
     @Transactional(readOnly = true)
     public Page<Project> getProjects(String keyword, String status, Pageable pageable) {
         return projectRepository.searchProjects(keyword, status, pageable);
     }
 
-    // Xem chi tiết dự án
     @Transactional(readOnly = true)
     public Project getProjectById(Long id) {
         return projectRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy dự án ID: " + id));
@@ -76,8 +74,6 @@ public class ProjectService {
         return projectRepository.save(project);
     }
 
-    // Xóa mềm: chuyển trạng thái sang INACTIVE
-    // Giữ lại dự án để không ảnh hưởng task cũ.
     @Transactional
     public void deleteProject(Long id) {
         Project project = getProjectById(id);
