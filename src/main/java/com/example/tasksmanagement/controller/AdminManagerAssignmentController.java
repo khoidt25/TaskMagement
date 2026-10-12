@@ -100,10 +100,4 @@ public class AdminManagerAssignmentController {
                 Map.of("message", "Đã thu hồi quyền quản lý Member"));
     }
 
-//    private Long currentUserId() {
-//        // TODO: Lấy ID của Admin đã đăng nhập từ SecurityContext.
-//        // Không lấy adminId từ request do client gửi lên.
-//        throw new UnsupportedOperationException(
-//                "Hãy tích hợp với JWT authentication hiện tại");
-//    }
 }

@@ -33,9 +33,4 @@ public class ManagerScopeController {
         return service.getMemberIds(managerId);
     }
 
-//    private Long currentUserId() {
-//        // TODO: Lấy userId từ Authentication/JWT đã xác thực.
-//        throw new UnsupportedOperationException(
-//                "Hãy tích hợp với JWT authentication hiện tại");
-//    }
 }
