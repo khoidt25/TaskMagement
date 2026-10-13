@@ -3,6 +3,7 @@ package com.example.tasksmanagement.controller;
 import com.example.tasksmanagement.dto.UserCreateRequest;
 import com.example.tasksmanagement.dto.UserResponse;
 import com.example.tasksmanagement.entity.Customer;
+import com.example.tasksmanagement.entity.User;
 import com.example.tasksmanagement.service.UserAdminService;
 
 import org.springframework.data.domain.Page;
@@ -32,11 +33,9 @@ public class UserController {
     }
 
 //    @GetMapping
-//    public ResponseEntity<Page<Customer>> getCustomers(@RequestParam(required = false) String keyword, @RequestParam(required = false) String status, @PageableDefault(page = 0, size = 10, sort = "customerName", direction = Sort.Direction.DESC) Pageable pageable) {
-//        return ResponseEntity.ok(customerService.searchCustomer(keyword, status, pageable));
+//    public ResponseEntity<Page<User>> getUsers(@RequestParam(required = false) String keyword, @RequestParam(required = false) String status, @PageableDefault(page = 0, size = 10, sort = "username", direction = Sort.Direction.DESC) Pageable pageable) {
+//        return ResponseEntity.ok(userAdminService.searchUser(keyword, status, pageable));
 //    }
-
-
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody UserCreateRequest request) {

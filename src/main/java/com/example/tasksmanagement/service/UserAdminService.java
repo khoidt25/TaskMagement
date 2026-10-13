@@ -3,10 +3,13 @@ package com.example.tasksmanagement.service;
 import com.example.tasksmanagement.dto.UserCreateRequest;
 import com.example.tasksmanagement.dto.UserResponse;
 import com.example.tasksmanagement.entity.AppRole;
+import com.example.tasksmanagement.entity.Customer;
 import com.example.tasksmanagement.entity.User;
 import com.example.tasksmanagement.repository.AppRoleRepository;
 import com.example.tasksmanagement.repository.UserRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,18 @@ public class UserAdminService {
     public List<UserResponse> getAll() {
         return userRepository.findAll().stream().map(this::toResponse).toList();
     }
+
+//    public Page<User> searchUser(
+//            String keyword,
+//            String status,
+//            Pageable pageable) {
+//
+//        return userRepository.searchUser(
+//                keyword,
+//                status,
+//                pageable
+//        );
+//    }
 
     @Transactional
     public UserResponse create(UserCreateRequest request) {
