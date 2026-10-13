@@ -2,8 +2,13 @@
 package com.example.tasksmanagement.controller;
 
 import com.example.tasksmanagement.entity.Customer;
+import com.example.tasksmanagement.entity.Project;
 import com.example.tasksmanagement.service.CustomerService;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,9 +25,14 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<Customer>> findAll() {
+    @GetMapping("/all")
+    public ResponseEntity<List<Customer>> getAllCustomers() {
         return ResponseEntity.ok(customerService.findAll());
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<Customer>> getCustomers(@RequestParam(required = false) String keyword, @RequestParam(required = false) String status, @PageableDefault(page = 0, size = 10, sort = "customerName", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(customerService.searchCustomer(keyword, status, pageable));
     }
 
     @GetMapping("/{id}")

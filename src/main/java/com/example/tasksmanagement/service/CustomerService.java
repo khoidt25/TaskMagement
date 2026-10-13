@@ -3,6 +3,8 @@ package com.example.tasksmanagement.service;
 import com.example.tasksmanagement.entity.Customer;
 import com.example.tasksmanagement.repository.CustomerRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,6 +22,18 @@ public class CustomerService {
 
     public List<Customer> findAll() {
         return customerRepository.findAll();
+    }
+
+    public Page<Customer> searchCustomer(
+            String keyword,
+            String status,
+            Pageable pageable) {
+
+        return customerRepository.searchCustomer(
+                keyword,
+                status,
+                pageable
+        );
     }
 
     public Customer findById(Long id) {
