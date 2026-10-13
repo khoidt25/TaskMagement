@@ -11,6 +11,8 @@ import com.example.tasksmanagement.repository.TaskRoleRepository;
 import com.example.tasksmanagement.repository.TaskRepository;
 import com.example.tasksmanagement.repository.UserRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -220,4 +222,77 @@ public class TaskMemberService {
         return memberRepository.save(member);
     }
 
+    @Transactional(readOnly = true)
+    public Page<TaskMemberResponse> getMyTasksPage(
+            Long userId,
+            Pageable pageable) {
+
+        userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("User không tồn tại."));
+
+        return memberRepository.findMyTasksWithDetails(userId, pageable)
+                .map(this::toResponseFromRow);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TaskMemberResponse> getMyTasksByStatusPage(
+            Long userId,
+            TaskStatus status,
+            Pageable pageable) {
+
+        userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("User không tồn tại."));
+
+        return memberRepository
+                .findMyTasksWithDetailsByStatus(userId, status, pageable)
+                .map(this::toResponseFromRow);
+    }
+
+    private TaskMemberResponse toResponseFromRow(Object[] row) {
+        TaskMember member = (TaskMember) row[0];
+        Task task = (Task) row[1];
+        User user = (User) row[2];
+        TaskRole role = (TaskRole) row[3];
+
+        return toResponse(member, task, user, role);
+    }
+
+    private TaskMemberResponse toResponse(
+            TaskMember member,
+            Task task,
+            User user,
+            TaskRole role) {
+
+        TaskMemberResponse response = new TaskMemberResponse();
+
+        // Giữ nguyên các lệnh set từ toResponse(member) hiện tại
+        // để ánh xạ những trường thuộc TaskMember.
+
+        response.setTaskMemberId(member.getTaskMemberId());
+        response.setTaskId(member.getTaskId());
+        response.setUserId(member.getUserId());
+
+        if (task != null) {
+            response.setTaskCode(task.getTaskCode());
+            response.setTaskName(task.getTaskName());
+        }
+
+        if (user != null) {
+            response.setUsername(user.getUsername());
+            response.setFullName(user.getFullName());
+        }
+
+        if (role != null) {
+            response.setRoleCode(role.getRoleCode());
+            response.setRoleName(role.getRoleName());
+        }
+
+        // Bổ sung các trường còn lại theo DTO hiện tại.
+        response.setStatus(member.getStatus());
+        response.setProgress(member.getProgress());
+
+        return response;
+    }
 }
