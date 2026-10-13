@@ -226,7 +226,7 @@ public class ProjectService {
 
         return projects.stream()
                 .map(p -> new ProjectResponse(
-                        p.getProjectId(), p.getProjectName()))
+                        p.getProjectId(), p.getProjectName(), p.getProjectStatus()))
                 .toList();
     }
 

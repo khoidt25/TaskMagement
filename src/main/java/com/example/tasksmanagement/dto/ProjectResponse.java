@@ -4,13 +4,15 @@ public class ProjectResponse {
 
     private Long projectId;
     private String projectName;
+    private String projectStatus;
 
     public ProjectResponse() {
     }
 
-    public ProjectResponse(Long projectId, String projectName) {
+    public ProjectResponse(Long projectId, String projectName,String projectStatus) {
         this.projectId = projectId;
         this.projectName = projectName;
+        this.projectStatus = projectStatus;
     }
 
     public Long getProjectId() {
@@ -28,4 +30,13 @@ public class ProjectResponse {
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
+
+    public String getProjectStatus() {
+        return projectStatus;
+    }
+
+    public void setProjectStatus(String projectStatus) {
+        this.projectStatus = projectStatus;
+    }
+
 }
