@@ -39,7 +39,6 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> login(
             @RequestBody LoginRequest body) {
 
-        // 1. Xác thực username và password
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
@@ -48,12 +47,10 @@ public class AuthController {
                         )
                 );
 
-        // 2. Tạo JWT
         String token = jwtService.generateToken(
                 authentication.getName()
         );
 
-        // 3. Lấy thông tin user từ database
         User user = userRepository
                 .findByUsername(authentication.getName())
                 .orElseThrow(() ->
@@ -62,13 +59,11 @@ public class AuthController {
                         )
                 );
 
-        // 4. Lấy danh sách roles
         List<String> roles = authentication.getAuthorities()
                 .stream()
                 .map(authority -> authority.getAuthority())
                 .collect(Collectors.toList());
 
-        // 5. Trả về JWT và thông tin user
         Map<String, Object> userInfo = new LinkedHashMap<>();
         userInfo.put("userId", user.getUserId());
         userInfo.put("username", user.getUsername());

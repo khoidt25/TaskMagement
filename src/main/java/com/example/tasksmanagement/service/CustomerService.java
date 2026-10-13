@@ -1,8 +1,10 @@
 package com.example.tasksmanagement.service;
 
 import com.example.tasksmanagement.entity.Customer;
+import com.example.tasksmanagement.entity.Project;
 import com.example.tasksmanagement.repository.CustomerRepository;
 
+import com.example.tasksmanagement.repository.TaskRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -15,9 +17,12 @@ import java.util.List;
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final TaskRepository taskRepository;
 
-    public CustomerService(CustomerRepository customerRepository) {
+    public CustomerService(CustomerRepository customerRepository, TaskRepository taskRepository) {
+
         this.customerRepository = customerRepository;
+        this.taskRepository = taskRepository;
     }
 
     public List<Customer> findAll() {
@@ -83,9 +88,27 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    public void delete(Long id) {
-        Customer customer = findById(id);
-        customerRepository.delete(customer);
+    public boolean delete(Long id) {
+
+        // Kiểm tra ID của Customer, không phải ID của Customer.
+        if (id == null || !customerRepository.existsById(id)) {
+            return false;
+        }
+
+        if (taskRepository.existsByProjectId(id)) {
+            throw new IllegalStateException(
+                    "Không thể xóa customer task công việc đã có khách hàng.");
+        }
+
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Không tìm thấy Customer"));
+
+        customer.setCustomerStatus("INACTIVE");
+        customerRepository.save(customer);
+
+        return true;
+
     }
 
     private void validateCustomer(Customer customer) {

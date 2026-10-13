@@ -30,5 +30,7 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
     Page<Task> findByDeadlineBeforeAndStatusNotIn(LocalDate date, List<TaskStatus> statuses, Pageable pageable);
 
     boolean existsByProjectId(Long projectId);
+
+    boolean existsByCustomerId(Long customerId);
 }
 
