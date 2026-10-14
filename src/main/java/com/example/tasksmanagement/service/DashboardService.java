@@ -139,5 +139,19 @@ public class DashboardService {
     private boolean isOverdue(Task task) {
         return task.getDeadline() != null && task.getDeadline().isBefore(LocalDate.now()) && task.getStatus() != TaskStatus.COMPLETED && task.getStatus() != TaskStatus.CANCELLED;
     }
+
+    public Map<String, Long> getTaskStatusStatistics() {
+        Map<String, Long> statistics = new LinkedHashMap<>();
+
+        for (TaskStatus status : TaskStatus.values()) {
+            statistics.put(
+                    status.name(),
+                    taskRepository.countByStatus(status)
+            );
+        }
+
+        return statistics;
+    }
+
 }
 

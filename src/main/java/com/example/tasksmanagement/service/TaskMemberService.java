@@ -70,8 +70,6 @@ public class TaskMemberService {
             request.setProgress(0);
         }
 
-
-
         TaskMember saved = memberRepository.save(request);
 
         // Đồng bộ trạng thái Task tổng thể.

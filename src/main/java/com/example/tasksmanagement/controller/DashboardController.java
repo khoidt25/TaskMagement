@@ -38,5 +38,10 @@ public class DashboardController {
     public ResponseEntity<List<Map<String, Object>>> getProjectSummary() {
         return ResponseEntity.ok(dashboardService.getProjectSummary());
     }
+
+    @GetMapping("/statistics/status")
+    public ResponseEntity<Map<String, Long>> getTaskStatusStatistics() {
+        return ResponseEntity.ok(dashboardService.getTaskStatusStatistics());
+    }
 }
 

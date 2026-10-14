@@ -33,6 +33,10 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
 
     boolean existsByCustomerId(Long customerId);
 
-//    Page<Task> findByCreatedBy(Long createdBy, Pageable pageable);
+    long countByStatus(TaskStatus status);
+
+    List<Task> findByCreatedBy(Long createdBy);
+
+
 }
 
