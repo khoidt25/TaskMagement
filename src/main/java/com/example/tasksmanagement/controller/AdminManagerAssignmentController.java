@@ -27,7 +27,6 @@ public class AdminManagerAssignmentController {
         this.currentUserService = currentUserService;
     }
 
-    // POST /api/admin/manager-assignments/projects
     @PostMapping("/projects")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> assignProjects(
@@ -45,7 +44,6 @@ public class AdminManagerAssignmentController {
         ));
     }
 
-    // POST /api/admin/manager-assignments/members
     @PostMapping("/members")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> assignMembers(
