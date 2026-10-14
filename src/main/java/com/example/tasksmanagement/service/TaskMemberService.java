@@ -70,8 +70,15 @@ public class TaskMemberService {
             request.setProgress(0);
         }
 
+
+
         TaskMember saved = memberRepository.save(request);
+
+        // Đồng bộ trạng thái Task tổng thể.
+        syncTaskStatus(taskId);
+
         return toResponse(saved);
+
     }
 
     @Transactional(readOnly = true)
@@ -123,7 +130,12 @@ public class TaskMemberService {
                 member.setNote(request.getNote());
             }
 
-            return toResponse(memberRepository.save(member));
+            TaskMember saved = memberRepository.save(member);
+
+            // Cập nhật trạng thái Task theo các thành viên.
+            syncTaskStatus(taskId);
+
+            return toResponse(saved);
         });
     }
 
@@ -136,6 +148,8 @@ public class TaskMemberService {
         }
 
         memberRepository.delete(result.get());
+        // Tính lại trạng thái theo những thành viên còn lại.
+        syncTaskStatus(taskId);
         return true;
     }
 
@@ -219,7 +233,12 @@ public class TaskMemberService {
             member.setNote(request.getNote());
         }
 
-        return memberRepository.save(member);
+        TaskMember saved = memberRepository.save(member);
+
+        // Đồng bộ Task sau khi Dev cập nhật trạng thái hoặc tiến độ.
+        syncTaskStatus(member.getTaskId());
+
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -294,5 +313,57 @@ public class TaskMemberService {
         response.setProgress(member.getProgress());
 
         return response;
+    }
+
+    /**
+     * Đồng bộ trạng thái Task tổng thể theo trạng thái phân công.
+     */
+    private void syncTaskStatus(Long taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Task không tồn tại."));
+
+        // Không tự động thay đổi Task đã bị hủy.
+        if (task.getStatus() == TaskStatus.CANCELLED) {
+            return;
+        }
+
+        List<TaskMember> members = memberRepository.findByTaskId(taskId);
+
+        // Chưa có thành viên: giữ trạng thái chưa bắt đầu.
+        if (members.isEmpty()) {
+            task.setStatus(TaskStatus.NOT_STARTED);
+            taskRepository.save(task);
+            return;
+        }
+
+        boolean allCompleted = members.stream()
+                .allMatch(member ->
+                        member.getStatus() == TaskStatus.COMPLETED);
+
+        boolean hasInProgress = members.stream()
+                .anyMatch(member ->
+                        member.getStatus() == TaskStatus.IN_PROGRESS);
+
+        boolean hasCompleted = members.stream()
+                .anyMatch(member ->
+                        member.getStatus() == TaskStatus.COMPLETED);
+
+        boolean hasPending = members.stream()
+                .anyMatch(member ->
+                        member.getStatus() == TaskStatus.PENDING);
+
+        if (allCompleted) {
+            task.setStatus(TaskStatus.COMPLETED);
+        } else if (hasInProgress || hasCompleted) {
+            // Có người đang làm hoặc đã hoàn thành một phần công việc.
+            task.setStatus(TaskStatus.IN_PROGRESS);
+        } else if (hasPending) {
+            task.setStatus(TaskStatus.PENDING);
+        } else {
+            task.setStatus(TaskStatus.NOT_STARTED);
+        }
+
+        taskRepository.save(task);
     }
 }

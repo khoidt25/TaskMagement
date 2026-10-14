@@ -17,4 +17,6 @@ public interface ManagerProjectRepository
             Long managerId, Long projectId);
 
     void deleteByManagerId(Long managerId);
+
+//    List<ManagerProject> findByManagerId(Long managerId);
 }

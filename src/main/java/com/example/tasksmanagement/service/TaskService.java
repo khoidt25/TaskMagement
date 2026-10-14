@@ -1,8 +1,10 @@
 package com.example.tasksmanagement.service;
 
+import com.example.tasksmanagement.entity.ManagerProject;
 import com.example.tasksmanagement.entity.Task;
 import com.example.tasksmanagement.entity.User;
 import com.example.tasksmanagement.lib.TaskStatus;
+import com.example.tasksmanagement.repository.ManagerProjectRepository;
 import com.example.tasksmanagement.repository.TaskMemberRepository;
 import com.example.tasksmanagement.repository.TaskRepository;
 import com.example.tasksmanagement.repository.UserRepository;
@@ -25,12 +27,14 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskMemberRepository taskMemberRepository;
     private final UserRepository userRepository;
+    private final ManagerProjectRepository managerProjectRepository;
 
-    public TaskService(TaskRepository taskRepository, TaskMemberRepository taskMemberRepository, UserRepository userRepository) {
+    public TaskService(TaskRepository taskRepository, TaskMemberRepository taskMemberRepository, UserRepository userRepository, ManagerProjectRepository managerProjectRepository) {
 
         this.taskRepository = taskRepository;
         this.taskMemberRepository = taskMemberRepository;
         this.userRepository = userRepository;
+        this.managerProjectRepository = managerProjectRepository;
     }
 
     public Page<Task> getAll(Pageable pageable) {
@@ -94,6 +98,18 @@ public class TaskService {
             LocalDate deadlineTo,
             Pageable pageable) {
 
+        // Lấy các dự án được phân công cho Manager.
+        List<Long> managerProjectIds =
+                managerProjectRepository.findByManagerId(managerId)
+                        .stream()
+                        .map(ManagerProject::getProjectId)
+                        .toList();
+
+        // Manager chưa được phân công dự án nào.
+        if (managerProjectIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
         Specification<Task> specification =
                 TaskSpecification.keyword(keyword)
                         .and(TaskSpecification.status(status))
@@ -102,9 +118,9 @@ public class TaskService {
                         .and(TaskSpecification.assignedToUser(userId))
                         .and(TaskSpecification.deadlineFrom(deadlineFrom))
                         .and(TaskSpecification.deadlineTo(deadlineTo))
-                        // Chỉ lấy task do Manager hiện tại tạo
+                        // Chỉ lấy task thuộc dự án Manager quản lý.
                         .and((root, query, cb) ->
-                                cb.equal(root.get("createdBy"), managerId));
+                                root.get("projectId").in(managerProjectIds));
 
         return taskRepository.findAll(specification, pageable);
     }
