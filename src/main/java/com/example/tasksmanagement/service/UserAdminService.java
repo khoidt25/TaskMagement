@@ -118,5 +118,16 @@ public class UserAdminService {
 
         return response;
     }
+
+    public Long getUserIdByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Không tìm thấy tài khoản: " + username
+                        ));
+
+        return user.getUserId();
+    }
+
 }
 

@@ -4,12 +4,14 @@ import com.example.tasksmanagement.entity.Task;
 import com.example.tasksmanagement.lib.TaskStatus;
 import com.example.tasksmanagement.service.TaskService;
 
+import com.example.tasksmanagement.service.UserAdminService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springdoc.core.annotations.ParameterObject;
 
@@ -20,15 +22,22 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import java.util.Map;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
 
     private final TaskService taskService;
+    private final UserAdminService userAdminService;
+    
 
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, UserAdminService userAdminService) {
         this.taskService = taskService;
+        this.userAdminService = userAdminService;
     }
 
     @GetMapping
@@ -125,6 +134,75 @@ public class TaskController {
             throw new IllegalArgumentException("deadlineFrom must be before or equal to deadlineTo");
         }
         return taskService.filter(keyword, status, projectId, customerId, userId, deadlineFrom, deadlineTo, pageable);
+    }
+
+    @GetMapping("/manager/my-tasks")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<Page<Task>> getMyManagerTasks(
+            Authentication authentication,
+            @ParameterObject
+            @PageableDefault(
+                    page = 0,
+                    size = 10,
+                    sort = "taskId",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable) {
+
+        Page<Task> tasks =
+                taskService.getTasksCreatedByManager(
+                        authentication.getName(),
+                        pageable
+                );
+
+        return ResponseEntity.ok(tasks);
+    }
+
+    @GetMapping("/manager/filter")
+    @PreAuthorize("hasRole('MANAGER')")
+    public Page<Task> filterManagerTasks(
+            Authentication authentication,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate deadlineFrom,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate deadlineTo,
+            @ParameterObject
+            @PageableDefault(
+                    page = 0,
+                    size = 10,
+                    sort = "taskId",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable) {
+
+        // Cần đổi username thành ID của Manager từ database.
+        Long managerId = userAdminService.getUserIdByUsername(
+                authentication.getName()
+        );
+
+        if (deadlineFrom != null && deadlineTo != null
+                && deadlineFrom.isAfter(deadlineTo)) {
+            throw new IllegalArgumentException(
+                    "deadlineFrom must be before or equal to deadlineTo"
+            );
+        }
+
+        return taskService.filterManagerTasks(
+                managerId,
+                keyword,
+                status,
+                projectId,
+                customerId,
+                userId,
+                deadlineFrom,
+                deadlineTo,
+                pageable
+        );
     }
 
 }

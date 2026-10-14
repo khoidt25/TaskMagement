@@ -1,9 +1,11 @@
 package com.example.tasksmanagement.service;
 
 import com.example.tasksmanagement.entity.Task;
+import com.example.tasksmanagement.entity.User;
 import com.example.tasksmanagement.lib.TaskStatus;
 import com.example.tasksmanagement.repository.TaskMemberRepository;
 import com.example.tasksmanagement.repository.TaskRepository;
+import com.example.tasksmanagement.repository.UserRepository;
 import com.example.tasksmanagement.specification.TaskSpecification;
 
 import org.springframework.data.domain.Page;
@@ -22,12 +24,13 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskMemberRepository taskMemberRepository;
+    private final UserRepository userRepository;
 
-
-    public TaskService(TaskRepository taskRepository, TaskMemberRepository taskMemberRepository) {
+    public TaskService(TaskRepository taskRepository, TaskMemberRepository taskMemberRepository, UserRepository userRepository) {
 
         this.taskRepository = taskRepository;
         this.taskMemberRepository = taskMemberRepository;
+        this.userRepository = userRepository;
     }
 
     public Page<Task> getAll(Pageable pageable) {
@@ -80,6 +83,32 @@ public class TaskService {
         return taskRepository.findAll(specification, pageable);
     }
 
+    public Page<Task> filterManagerTasks(
+            Long managerId,
+            String keyword,
+            TaskStatus status,
+            Long projectId,
+            Long customerId,
+            Long userId,
+            LocalDate deadlineFrom,
+            LocalDate deadlineTo,
+            Pageable pageable) {
+
+        Specification<Task> specification =
+                TaskSpecification.keyword(keyword)
+                        .and(TaskSpecification.status(status))
+                        .and(TaskSpecification.projectId(projectId))
+                        .and(TaskSpecification.customerId(customerId))
+                        .and(TaskSpecification.assignedToUser(userId))
+                        .and(TaskSpecification.deadlineFrom(deadlineFrom))
+                        .and(TaskSpecification.deadlineTo(deadlineTo))
+                        // Chỉ lấy task do Manager hiện tại tạo
+                        .and((root, query, cb) ->
+                                cb.equal(root.get("createdBy"), managerId));
+
+        return taskRepository.findAll(specification, pageable);
+    }
+
     public Task create(Task task) {
         task.setTaskId(null);
         return taskRepository.save(task);
@@ -128,6 +157,20 @@ public class TaskService {
 
         taskRepository.deleteById(id);
         return true;
+    }
+
+    public Page<Task> getTasksCreatedByManager(
+            String username,
+            Pageable pageable) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("Không tìm thấy tài khoản"));
+
+        return taskRepository.findByCreatedBy(
+                user.getUserId(),
+                pageable
+        );
     }
 
 }
