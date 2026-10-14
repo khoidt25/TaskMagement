@@ -1,5 +1,6 @@
 package com.example.tasksmanagement.controller;
 
+import com.example.tasksmanagement.service.DashboardManagerService;
 import com.example.tasksmanagement.service.DashboardService;
 import com.example.tasksmanagement.service.UserAdminService;
 
@@ -12,17 +13,17 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/dashboard")
+@RequestMapping("/api/dashboardManager")
 @PreAuthorize("hasRole('MANAGER')")
 
 public class DashboardManagerController {
-    private final DashboardService dashboardService;
+    private final DashboardManagerService dashboardManagerService;
     private final UserAdminService userAdminService;
 
     public DashboardManagerController(
-            DashboardManagerService dashboardService,
+            DashboardManagerService dashboardManagerService,
             UserAdminService userAdminService) {
-        this.dashboardService = dashboardService;
+        this.dashboardManagerService = dashboardManagerService;
         this.userAdminService = userAdminService;
     }
 
@@ -36,7 +37,7 @@ public class DashboardManagerController {
         Long managerId = getManagerId(authentication);
 
         return ResponseEntity.ok(
-                dashboardService.getSummary(managerId)
+                dashboardManagerService.getSummary(managerId)
         );
     }
 
@@ -50,7 +51,7 @@ public class DashboardManagerController {
         Long managerId = getManagerId(authentication);
 
         return ResponseEntity.ok(
-                dashboardService.getTaskStatus(managerId)
+                dashboardManagerService.getTaskStatus(managerId)
         );
     }
 
@@ -64,7 +65,7 @@ public class DashboardManagerController {
         Long managerId = getManagerId(authentication);
 
         return ResponseEntity.ok(
-                dashboardService.getTaskStatusStatistics(managerId)
+                dashboardManagerService.getTaskStatusStatistics(managerId)
         );
     }
 
@@ -78,7 +79,7 @@ public class DashboardManagerController {
         Long managerId = getManagerId(authentication);
 
         return ResponseEntity.ok(
-                dashboardService.getProjectSummary(managerId)
+                dashboardManagerService.getProjectSummary(managerId)
         );
     }
 
