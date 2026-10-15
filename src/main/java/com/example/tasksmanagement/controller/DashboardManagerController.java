@@ -1,5 +1,6 @@
 package com.example.tasksmanagement.controller;
 
+import com.example.tasksmanagement.entity.Task;
 import com.example.tasksmanagement.service.DashboardManagerService;
 import com.example.tasksmanagement.service.UserAdminService;
 
@@ -101,4 +102,21 @@ public class DashboardManagerController {
                 authentication.getName()
         );
     }
+
+    /**
+     * Danh sách task quá hạn của Manager đang đăng nhập.
+     */
+    @GetMapping("/overdue-tasks")
+    public ResponseEntity<List<Task>> getOverdueTasks(
+            Authentication authentication) {
+
+        Long managerId = userAdminService.getUserIdByUsername(
+                authentication.getName()
+        );
+
+        return ResponseEntity.ok(
+                dashboardManagerService.getOverdueTasks(managerId)
+        );
+    }
+
 }

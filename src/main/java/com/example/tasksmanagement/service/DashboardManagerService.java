@@ -1,6 +1,8 @@
 
 package com.example.tasksmanagement.service;
 
+import com.example.tasksmanagement.entity.Task;
+import com.example.tasksmanagement.repository.DashboardManagerRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +17,11 @@ import java.util.Map;
 public class DashboardManagerService {
 
     private final JdbcTemplate jdbcTemplate;
+    private DashboardManagerRepository dashboardManagerRepository;
 
-    public DashboardManagerService(JdbcTemplate jdbcTemplate) {
+    public DashboardManagerService(JdbcTemplate jdbcTemplate, DashboardManagerRepository dashboardManagerRepository) {
         this.jdbcTemplate = jdbcTemplate;
+        this.dashboardManagerRepository = dashboardManagerRepository;
     }
 
     /**
@@ -236,4 +240,20 @@ public class DashboardManagerService {
         labels.add(status);
         data.add(statistics.getOrDefault(status, 0L));
     }
+
+    /**
+     * Lấy danh sách task quá hạn thuộc các dự án
+     * được gán cho Manager trong bảng manager_projects.
+     */
+    public List<Task> getOverdueTasks(Long managerId) {
+        if (managerId == null) {
+            throw new IllegalArgumentException(
+                    "Manager ID không được để trống."
+            );
+        }
+
+        return dashboardManagerRepository
+                .findOverdueTasksByManagerId(managerId);
+    }
+
 }
