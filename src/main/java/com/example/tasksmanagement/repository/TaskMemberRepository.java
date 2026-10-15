@@ -101,19 +101,23 @@ public interface TaskMemberRepository extends JpaRepository<TaskMember, Long> {
     interface MemberTaskCount {
         Long getMemberId();
         Long getTotalTasks();
+        String getMemberName();
     }
 
     @Query(value = """
-        SELECT
-            tm.user_id AS "memberId",
-            COUNT(DISTINCT tm.task_id) AS "totalTasks"
-        FROM task_members tm
-        INNER JOIN tasks t
-            ON t.task_id = tm.task_id
-        WHERE t.project_id = :projectId
-        GROUP BY tm.user_id
-        ORDER BY tm.user_id
-        """, nativeQuery = true)
+    SELECT
+        tm.user_id AS "memberId",
+        u.full_name AS "memberName",
+        COUNT(DISTINCT tm.task_id) AS "totalTasks"
+    FROM task_members tm
+    INNER JOIN tasks t
+        ON t.task_id = tm.task_id
+    INNER JOIN users u
+        ON u.user_id = tm.user_id
+    WHERE t.project_id = :projectId
+    GROUP BY tm.user_id, u.full_name
+    ORDER BY tm.user_id
+    """, nativeQuery = true)
     List<MemberTaskCount> countTasksByMemberInProject(
             @Param("projectId") Long projectId);
 

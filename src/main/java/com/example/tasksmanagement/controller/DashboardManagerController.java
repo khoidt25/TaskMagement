@@ -123,7 +123,6 @@ public class DashboardManagerController {
     public ResponseEntity<ProjectMemberTaskSummaryResponse>
     getProjectMemberTaskSummary(
             @RequestParam Long managerId) {
-
         return ResponseEntity.ok(dashboardManagerService.getProjectMemberTaskSummary(managerId));
     }
 

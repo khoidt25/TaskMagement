@@ -3,11 +3,9 @@ package com.example.tasksmanagement.service;
 
 import com.example.tasksmanagement.dto.ProjectMemberTaskSummaryResponse;
 import com.example.tasksmanagement.entity.ManagerProject;
+import com.example.tasksmanagement.entity.Project;
 import com.example.tasksmanagement.entity.Task;
-import com.example.tasksmanagement.repository.DashboardManagerRepository;
-import com.example.tasksmanagement.repository.ManagerProjectRepository;
-import com.example.tasksmanagement.repository.TaskMemberRepository;
-import com.example.tasksmanagement.repository.TaskRepository;
+import com.example.tasksmanagement.repository.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jmx.export.metadata.ManagedAttribute;
 import org.springframework.stereotype.Service;
@@ -27,14 +25,16 @@ public class DashboardManagerService {
     private final ManagerProjectRepository managerProjectRepository;
     private final TaskRepository taskRepository;
     private final TaskMemberRepository taskMemberRepository;
+    private final ProjectRepository projectRepository;
 
 
-    public DashboardManagerService(JdbcTemplate jdbcTemplate, DashboardManagerRepository dashboardManagerRepository, TaskRepository taskRepository, TaskMemberRepository taskMemberRepository, ManagerProjectRepository managerProjectRepository) {
+    public DashboardManagerService(JdbcTemplate jdbcTemplate, DashboardManagerRepository dashboardManagerRepository, TaskRepository taskRepository, TaskMemberRepository taskMemberRepository, ManagerProjectRepository managerProjectRepository, ProjectRepository projectRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.dashboardManagerRepository = dashboardManagerRepository;
         this.taskRepository = taskRepository;
         this.taskMemberRepository = taskMemberRepository;
         this.managerProjectRepository = managerProjectRepository;
+        this.projectRepository = projectRepository;
     }
 
     /**
@@ -297,11 +297,22 @@ public class DashboardManagerService {
                     .stream()
                     .map(item -> new MemberSummary(
                             item.getMemberId(),
+                            item.getMemberName(),
                             item.getTotalTasks()))
                     .toList();
 
+            Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() ->
+                            new RuntimeException("Không tìm thấy project: " + projectId));
+
             projectSummaries.add(
-                    new ProjectSummary(projectId, totalTasks, members));
+                    new ProjectSummary(
+                            projectId,
+                            project.getProjectName(),
+                            totalTasks,
+                            members
+                    )
+            );
         }
 
         return new ProjectMemberTaskSummaryResponse(

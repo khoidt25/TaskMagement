@@ -37,6 +37,7 @@ public class ProjectMemberTaskSummaryResponse {
     public static class ProjectSummary {
 
         private Long projectId;
+        private String projectName;
         private long totalTasks;
         private List<MemberSummary> members;
 
@@ -45,9 +46,11 @@ public class ProjectMemberTaskSummaryResponse {
 
         public ProjectSummary(
                 Long projectId,
+                String projectName,
                 long totalTasks,
                 List<MemberSummary> members) {
             this.projectId = projectId;
+            this.projectName = projectName;
             this.totalTasks = totalTasks;
             this.members = members;
         }
@@ -58,6 +61,14 @@ public class ProjectMemberTaskSummaryResponse {
 
         public void setProjectId(Long projectId) {
             this.projectId = projectId;
+        }
+
+        public String getProjectName() {
+            return projectName;
+        }
+
+        public void setProjectName(String projectName) {
+            this.projectName = projectName;
         }
 
         public long getTotalTasks() {
@@ -80,13 +91,18 @@ public class ProjectMemberTaskSummaryResponse {
     public static class MemberSummary {
 
         private Long memberId;
+        private String memberName;
         private long totalTasks;
 
         public MemberSummary() {
         }
 
-        public MemberSummary(Long memberId, long totalTasks) {
+        public MemberSummary(
+                Long memberId,
+                String memberName,
+                long totalTasks) {
             this.memberId = memberId;
+            this.memberName = memberName;
             this.totalTasks = totalTasks;
         }
 
@@ -98,6 +114,14 @@ public class ProjectMemberTaskSummaryResponse {
             this.memberId = memberId;
         }
 
+        public String getMemberName() {
+            return memberName;
+        }
+
+        public void setMemberName(String memberName) {
+            this.memberName = memberName;
+        }
+
         public long getTotalTasks() {
             return totalTasks;
         }
@@ -107,4 +131,3 @@ public class ProjectMemberTaskSummaryResponse {
         }
     }
 }
-
