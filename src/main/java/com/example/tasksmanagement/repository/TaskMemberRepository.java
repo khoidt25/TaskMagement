@@ -97,4 +97,24 @@ public interface TaskMemberRepository extends JpaRepository<TaskMember, Long> {
             Pageable pageable
     );
 
+
+    interface MemberTaskCount {
+        Long getMemberId();
+        Long getTotalTasks();
+    }
+
+    @Query(value = """
+        SELECT
+            tm.user_id AS "memberId",
+            COUNT(DISTINCT tm.task_id) AS "totalTasks"
+        FROM task_members tm
+        INNER JOIN tasks t
+            ON t.task_id = tm.task_id
+        WHERE t.project_id = :projectId
+        GROUP BY tm.user_id
+        ORDER BY tm.user_id
+        """, nativeQuery = true)
+    List<MemberTaskCount> countTasksByMemberInProject(
+            @Param("projectId") Long projectId);
+
 }

@@ -37,6 +37,6 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
 
     List<Task> findByCreatedBy(Long createdBy);
 
-
+    long countDistinctByProjectId(Long projectId);
 }
 

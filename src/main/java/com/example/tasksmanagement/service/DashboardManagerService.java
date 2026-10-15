@@ -1,16 +1,21 @@
 
 package com.example.tasksmanagement.service;
 
+import com.example.tasksmanagement.dto.ProjectMemberTaskSummaryResponse;
+import com.example.tasksmanagement.entity.ManagerProject;
 import com.example.tasksmanagement.entity.Task;
 import com.example.tasksmanagement.repository.DashboardManagerRepository;
+import com.example.tasksmanagement.repository.ManagerProjectRepository;
+import com.example.tasksmanagement.repository.TaskMemberRepository;
+import com.example.tasksmanagement.repository.TaskRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jmx.export.metadata.ManagedAttribute;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import com.example.tasksmanagement.dto.ProjectMemberTaskSummaryResponse.MemberSummary;
+import com.example.tasksmanagement.dto.ProjectMemberTaskSummaryResponse.ProjectSummary;
 
 @Service
 @Transactional(readOnly = true)
@@ -19,9 +24,17 @@ public class DashboardManagerService {
     private final JdbcTemplate jdbcTemplate;
     private DashboardManagerRepository dashboardManagerRepository;
 
-    public DashboardManagerService(JdbcTemplate jdbcTemplate, DashboardManagerRepository dashboardManagerRepository) {
+    private final ManagerProjectRepository managerProjectRepository;
+    private final TaskRepository taskRepository;
+    private final TaskMemberRepository taskMemberRepository;
+
+
+    public DashboardManagerService(JdbcTemplate jdbcTemplate, DashboardManagerRepository dashboardManagerRepository, TaskRepository taskRepository, TaskMemberRepository taskMemberRepository, ManagerProjectRepository managerProjectRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.dashboardManagerRepository = dashboardManagerRepository;
+        this.taskRepository = taskRepository;
+        this.taskMemberRepository = taskMemberRepository;
+        this.managerProjectRepository = managerProjectRepository;
     }
 
     /**
@@ -254,6 +267,45 @@ public class DashboardManagerService {
 
         return dashboardManagerRepository
                 .findOverdueTasksByManagerId(managerId);
+    }
+
+    @Transactional(readOnly = true)
+    public ProjectMemberTaskSummaryResponse
+    getProjectMemberTaskSummary(Long managerId) {
+
+        List<ManagerProject> assignments =
+                managerProjectRepository.findByManagerId(managerId);
+
+        // Loại project trùng nếu dữ liệu phân công có bản ghi lặp.
+        Set<Long> projectIds = new LinkedHashSet<>();
+
+        for (ManagerProject assignment : assignments) {
+            projectIds.add(assignment.getProjectId());
+        }
+
+        List<ProjectMemberTaskSummaryResponse.ProjectSummary> projectSummaries = new ArrayList<>();
+
+        for (Long projectId : projectIds) {
+
+            // Tổng task của project: mỗi task chỉ đếm một lần.
+            long totalTasks =
+                    taskRepository.countDistinctByProjectId(projectId);
+
+            // Thống kê số task của từng member trong project.
+            List<MemberSummary> members = taskMemberRepository
+                    .countTasksByMemberInProject(projectId)
+                    .stream()
+                    .map(item -> new MemberSummary(
+                            item.getMemberId(),
+                            item.getTotalTasks()))
+                    .toList();
+
+            projectSummaries.add(
+                    new ProjectSummary(projectId, totalTasks, members));
+        }
+
+        return new ProjectMemberTaskSummaryResponse(
+                managerId, projectSummaries);
     }
 
 }

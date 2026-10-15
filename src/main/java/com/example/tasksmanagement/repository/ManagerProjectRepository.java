@@ -20,5 +20,8 @@ public interface ManagerProjectRepository
 
 //    List<ManagerProject> findByManagerId(Long managerId);
 
+//    List<ManagerProject> findByManagerId(Long managerId);
+
+   // long countDistinctByProjectId(Long projectId);
 
 }
