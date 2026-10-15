@@ -110,9 +110,7 @@ public class DashboardManagerController {
     public ResponseEntity<List<Task>> getOverdueTasks(
             Authentication authentication) {
 
-        Long managerId = userAdminService.getUserIdByUsername(
-                authentication.getName()
-        );
+        Long managerId = getManagerId(authentication);
 
         return ResponseEntity.ok(
                 dashboardManagerService.getOverdueTasks(managerId)

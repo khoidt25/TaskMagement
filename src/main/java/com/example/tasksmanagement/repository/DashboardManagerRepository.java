@@ -18,19 +18,21 @@ public interface DashboardManagerRepository
      * được gán cho Manager trong manager_projects.
      */
     @Query("""
-        SELECT DISTINCT t
-        FROM Task t
-        JOIN t.project p
-        JOIN ManagerProject mp ON mp.project.projectId = p.projectId
-        WHERE mp.manager.userId = :managerId
-          AND t.deadline IS NOT NULL
-          AND t.deadline < CURRENT_DATE
-          AND t.status NOT IN (
-              com.example.tasksmanagement.lib.TaskStatus.COMPLETED,
-              com.example.tasksmanagement.lib.TaskStatus.CANCELLED
-          )
-        ORDER BY t.deadline ASC, t.taskId DESC
-        """)
+    SELECT DISTINCT t
+    FROM Task t
+    WHERE t.project.projectId IN (
+        SELECT mp.projectId
+        FROM ManagerProject mp
+        WHERE mp.managerId = :managerId
+    )
+    AND t.deadline IS NOT NULL
+    AND t.deadline < CURRENT_DATE
+    AND t.status NOT IN (
+        com.example.tasksmanagement.lib.TaskStatus.COMPLETED,
+        com.example.tasksmanagement.lib.TaskStatus.CANCELLED
+    )
+    ORDER BY t.deadline ASC, t.taskId DESC
+    """)
     List<Task> findOverdueTasksByManagerId(
             @Param("managerId") Long managerId
     );
