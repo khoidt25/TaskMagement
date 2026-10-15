@@ -43,5 +43,6 @@ public class DashboardController {
     public ResponseEntity<Map<String, Long>> getTaskStatusStatistics() {
         return ResponseEntity.ok(dashboardService.getTaskStatusStatistics());
     }
+
 }
 
