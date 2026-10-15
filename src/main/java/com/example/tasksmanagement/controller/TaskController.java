@@ -212,28 +212,6 @@ public class TaskController {
         );
     }
 
-    @GetMapping("/customer-summary")
-    public List<CustomerTaskSummaryResponse> getCustomerTaskSummary(
-            Authentication authentication) {
 
-//        if (authentication == null || !authentication.isAuthenticated()) {
-//            throw new ResponseStatusException(
-//                    HttpStatus.UNAUTHORIZED,
-//                    "Bạn chưa đăng nhập"
-//            );
-//        }
-//
-//        User user = userRepository.findByUsername(authentication.getName())
-//                .orElseThrow(() -> new ResponseStatusException(
-//                        HttpStatus.UNAUTHORIZED,
-//                        "Không tìm thấy người dùng"
-//                ));
-
-        Long managerId = userAdminService.getUserIdByUsername(
-                authentication.getName()
-        );
-
-        return taskService.getCustomerTaskSummaryByManagerId(managerId);
-    }
 
 }

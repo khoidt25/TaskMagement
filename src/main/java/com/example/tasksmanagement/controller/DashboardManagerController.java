@@ -1,8 +1,10 @@
 package com.example.tasksmanagement.controller;
 
+import com.example.tasksmanagement.dto.CustomerTaskSummaryResponse;
 import com.example.tasksmanagement.dto.ProjectMemberTaskSummaryResponse;
 import com.example.tasksmanagement.entity.Task;
 import com.example.tasksmanagement.service.DashboardManagerService;
+import com.example.tasksmanagement.service.TaskService;
 import com.example.tasksmanagement.service.UserAdminService;
 
 import org.springframework.http.ResponseEntity;
@@ -23,12 +25,14 @@ public class DashboardManagerController {
 
     private final DashboardManagerService dashboardManagerService;
     private final UserAdminService userAdminService;
+    private final TaskService taskService;
 
     public DashboardManagerController(
             DashboardManagerService dashboardManagerService,
-            UserAdminService userAdminService) {
+            UserAdminService userAdminService, TaskService taskService) {
         this.dashboardManagerService = dashboardManagerService;
         this.userAdminService = userAdminService;
+        this.taskService = taskService;
     }
 
     /**
@@ -126,4 +130,13 @@ public class DashboardManagerController {
         return ResponseEntity.ok(dashboardManagerService.getProjectMemberTaskSummary(managerId));
     }
 
+    @GetMapping("/customer-summary")
+    public List<CustomerTaskSummaryResponse> getCustomerTaskSummary(
+            Authentication authentication) {
+        Long managerId = userAdminService.getUserIdByUsername(
+                authentication.getName()
+        );
+
+        return taskService.getCustomerTaskSummaryByManagerId(managerId);
+    }
 }
