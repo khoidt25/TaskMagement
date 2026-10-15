@@ -1,150 +1,239 @@
+
 package com.example.tasksmanagement.service;
 
-import com.example.tasksmanagement.entity.Project;
-import com.example.tasksmanagement.entity.Task;
-import com.example.tasksmanagement.lib.TaskStatus;
-import com.example.tasksmanagement.repository.ProjectRepository;
-import com.example.tasksmanagement.repository.TaskRepository;
-
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class DashboardManagerService {
-    private final TaskRepository taskRepository;
-    private final ProjectRepository projectRepository;
 
-    public DashboardManagerService(
-            TaskRepository taskRepository,
-            ProjectRepository projectRepository) {
-        this.taskRepository = taskRepository;
-        this.projectRepository = projectRepository;
+    private final JdbcTemplate jdbcTemplate;
+
+    public DashboardManagerService(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
-     * Lấy task do Manager đang đăng nhập tạo.
-     *
-     * Yêu cầu TaskRepository có:
-     * List<Task> findByCreatedBy(Long createdBy);
-     */
-    private List<Task> getManagerTasks(Long managerId) {
-        return taskRepository.findByCreatedBy(managerId);
-    }
-
-    /**
-     * GET /api/dashboard/summary
+     * Thống kê tổng quan theo các dự án được gán
+     * cho Manager trong bảng manager_projects.
      */
     public Map<String, Object> getSummary(Long managerId) {
-        List<Task> tasks = getManagerTasks(managerId);
+        String sql = """
+            SELECT
+                COUNT(DISTINCT t.task_id) AS "totalTasks",
 
-        Map<String, Object> result = new LinkedHashMap<>();
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'NOT_STARTED')
+                    AS "notStarted",
 
-        result.put("totalTasks", tasks.size());
-        result.put("inProgressTasks",
-                countByStatus(tasks, TaskStatus.IN_PROGRESS));
-        result.put("completedTasks",
-                countByStatus(tasks, TaskStatus.COMPLETED));
-        result.put("overdueTasks",
-                tasks.stream().filter(this::isOverdue).count());
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'IN_PROGRESS')
+                    AS "inProgress",
 
-        return result;
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'PENDING')
+                    AS "pending",
+
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'COMPLETED')
+                    AS "completed",
+
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'CANCELLED')
+                    AS "cancelled",
+
+                COUNT(DISTINCT t.task_id)
+                    FILTER (
+                        WHERE t.deadline < CURRENT_DATE
+                          AND t.status NOT IN ('COMPLETED', 'CANCELLED')
+                    ) AS "overdue",
+
+                (
+                    SELECT COUNT(DISTINCT mp.project_id)
+                    FROM manager_projects mp
+                    WHERE mp.manager_id = ?
+                ) AS "totalProjects"
+
+            FROM manager_projects mp
+            JOIN projects p
+                ON p.project_id = mp.project_id
+            LEFT JOIN tasks t
+                ON t.project_id = p.project_id
+            WHERE mp.manager_id = ?
+            """;
+
+        Map<String, Object> result =
+                jdbcTemplate.queryForMap(sql, managerId, managerId);
+
+        // Chuẩn hóa kiểu dữ liệu để frontend dễ sử dụng.
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("totalTasks", result.get("totalTasks"));
+        summary.put("notStarted", result.get("notStarted"));
+        summary.put("inProgress", result.get("inProgress"));
+        summary.put("pending", result.get("pending"));
+        summary.put("completed", result.get("completed"));
+        summary.put("cancelled", result.get("cancelled"));
+        summary.put("overdue", result.get("overdue"));
+        summary.put("totalProjects", result.get("totalProjects"));
+
+        return summary;
     }
 
     /**
-     * GET /api/dashboard/task-status
+     * Dữ liệu biểu đồ trạng thái task.
+     * Chỉ thống kê task thuộc dự án được gán cho Manager.
      */
     public Map<String, Object> getTaskStatus(Long managerId) {
-        List<Task> tasks = getManagerTasks(managerId);
+        Map<String, Long> statistics =
+                getTaskStatusStatistics(managerId);
 
-        Map<String, Long> statusCounts = getStatusCounts(tasks);
+        List<String> labels = new ArrayList<>();
+        List<Long> data = new ArrayList<>();
+
+        addStatus(labels, data, statistics, "NOT_STARTED");
+        addStatus(labels, data, statistics, "IN_PROGRESS");
+        addStatus(labels, data, statistics, "PENDING");
+        addStatus(labels, data, statistics, "COMPLETED");
+        addStatus(labels, data, statistics, "CANCELLED");
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("totalTasks", tasks.size());
-        result.put("statusCounts", statusCounts);
+        result.put("labels", labels);
+        result.put("data", data);
+        result.put("statuses", statistics);
+
+        long total = statistics.values()
+                .stream()
+                .mapToLong(Long::longValue)
+                .sum();
+
+        result.put("total", total);
 
         return result;
     }
 
     /**
-     * GET /api/dashboard/statistics/status
+     * Đếm số task theo từng trạng thái.
+     * Luôn trả về đủ các trạng thái, kể cả khi bằng 0.
      */
     public Map<String, Long> getTaskStatusStatistics(Long managerId) {
-        return getStatusCounts(getManagerTasks(managerId));
+        String sql = """
+            SELECT
+                t.status,
+                COUNT(DISTINCT t.task_id) AS total
+            FROM manager_projects mp
+            JOIN projects p
+                ON p.project_id = mp.project_id
+            JOIN tasks t
+                ON t.project_id = p.project_id
+            WHERE mp.manager_id = ?
+            GROUP BY t.status
+            """;
+
+        List<Map<String, Object>> rows =
+                jdbcTemplate.queryForList(sql, managerId);
+
+        Map<String, Long> statistics = new LinkedHashMap<>();
+
+        statistics.put("NOT_STARTED", 0L);
+        statistics.put("IN_PROGRESS", 0L);
+        statistics.put("PENDING", 0L);
+        statistics.put("COMPLETED", 0L);
+        statistics.put("CANCELLED", 0L);
+
+        for (Map<String, Object> row : rows) {
+            Object statusObject = row.get("status");
+            Object totalObject = row.get("total");
+
+            if (statusObject == null || totalObject == null) {
+                continue;
+            }
+
+            String status = statusObject.toString();
+            long total = ((Number) totalObject).longValue();
+
+            if (statistics.containsKey(status)) {
+                statistics.put(status, total);
+            }
+        }
+
+        return statistics;
     }
 
     /**
-     * GET /api/dashboard/project-summary
+     * Thống kê theo từng dự án được gán trong manager_projects.
+     * Dự án chưa có task vẫn được trả về với số lượng bằng 0.
      */
     public List<Map<String, Object>> getProjectSummary(Long managerId) {
-        List<Task> tasks = getManagerTasks(managerId);
+        String sql = """
+            SELECT
+                p.project_id AS "projectId",
+                p.project_code AS "projectCode",
+                p.project_name AS "projectName",
 
-        Map<Long, List<Task>> grouped = tasks.stream()
-                .filter(task -> task.getProjectId() != null)
-                .collect(Collectors.groupingBy(
-                        Task::getProjectId,
-                        LinkedHashMap::new,
-                        Collectors.toList()
-                ));
+                COUNT(DISTINCT t.task_id) AS "totalTasks",
 
-        List<Map<String, Object>> result = new ArrayList<>();
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'NOT_STARTED')
+                    AS "notStarted",
 
-        grouped.forEach((projectId, projectTasks) -> {
-            Map<String, Object> item = new LinkedHashMap<>();
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'IN_PROGRESS')
+                    AS "inProgress",
 
-            String projectName = projectRepository.findById(projectId)
-                    .map(Project::getProjectName)
-                    .orElse("Unknown Project");
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'PENDING')
+                    AS "pending",
 
-            item.put("projectId", projectId);
-            item.put("projectName", projectName);
-            item.put("totalTasks", projectTasks.size());
-            item.put("inProgressTasks",
-                    countByStatus(projectTasks, TaskStatus.IN_PROGRESS));
-            item.put("completedTasks",
-                    countByStatus(projectTasks, TaskStatus.COMPLETED));
-            item.put("overdueTasks",
-                    projectTasks.stream()
-                            .filter(this::isOverdue)
-                            .count());
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'COMPLETED')
+                    AS "completed",
 
-            result.add(item);
-        });
+                COUNT(DISTINCT t.task_id)
+                    FILTER (WHERE t.status = 'CANCELLED')
+                    AS "cancelled",
 
-        return result;
+                COUNT(DISTINCT t.task_id)
+                    FILTER (
+                        WHERE t.deadline < CURRENT_DATE
+                          AND t.status NOT IN ('COMPLETED', 'CANCELLED')
+                    ) AS "overdue"
+
+            FROM manager_projects mp
+            JOIN projects p
+                ON p.project_id = mp.project_id
+            LEFT JOIN tasks t
+                ON t.project_id = p.project_id
+
+            WHERE mp.manager_id = ?
+
+            GROUP BY
+                p.project_id,
+                p.project_code,
+                p.project_name
+
+            ORDER BY p.project_name
+            """;
+
+        return jdbcTemplate.queryForList(sql, managerId);
     }
 
-    private Map<String, Long> getStatusCounts(List<Task> tasks) {
-        Map<String, Long> result = new LinkedHashMap<>();
+    /**
+     * Thêm dữ liệu trạng thái vào dữ liệu biểu đồ.
+     */
+    private void addStatus(
+            List<String> labels,
+            List<Long> data,
+            Map<String, Long> statistics,
+            String status) {
 
-        for (TaskStatus status : TaskStatus.values()) {
-            result.put(
-                    status.name(),
-                    countByStatus(tasks, status)
-            );
-        }
-
-        return result;
+        labels.add(status);
+        data.add(statistics.getOrDefault(status, 0L));
     }
-
-    private long countByStatus(
-            List<Task> tasks,
-            TaskStatus status) {
-        return tasks.stream()
-                .filter(task -> task.getStatus() == status)
-                .count();
-    }
-
-    private boolean isOverdue(Task task) {
-        return task.getDeadline() != null
-                && task.getDeadline().isBefore(LocalDate.now())
-                && task.getStatus() != TaskStatus.COMPLETED
-                && task.getStatus() != TaskStatus.CANCELLED;
-    }
-
 }

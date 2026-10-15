@@ -1,13 +1,14 @@
 package com.example.tasksmanagement.controller;
 
 import com.example.tasksmanagement.service.DashboardManagerService;
-import com.example.tasksmanagement.service.DashboardService;
 import com.example.tasksmanagement.service.UserAdminService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
@@ -15,8 +16,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/dashboardManager")
 @PreAuthorize("hasRole('MANAGER')")
-
 public class DashboardManagerController {
+
     private final DashboardManagerService dashboardManagerService;
     private final UserAdminService userAdminService;
 
@@ -28,7 +29,8 @@ public class DashboardManagerController {
     }
 
     /**
-     * Thống kê tổng quan task của Manager đang đăng nhập.
+     * Thống kê tổng quan các task thuộc phạm vi dự án
+     * được gán cho Manager đang đăng nhập.
      */
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getSummary(
@@ -70,7 +72,8 @@ public class DashboardManagerController {
     }
 
     /**
-     * Thống kê dự án có task do Manager tạo.
+     * Thống kê task theo các dự án được gán cho Manager
+     * trong bảng manager_projects.
      */
     @GetMapping("/project-summary")
     public ResponseEntity<List<Map<String, Object>>> getProjectSummary(
@@ -83,7 +86,17 @@ public class DashboardManagerController {
         );
     }
 
+    /**
+     * Lấy ID của Manager đang đăng nhập,
+     * không nhận managerId từ request của frontend.
+     */
     private Long getManagerId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Bạn chưa đăng nhập."
+            );
+        }
+
         return userAdminService.getUserIdByUsername(
                 authentication.getName()
         );
