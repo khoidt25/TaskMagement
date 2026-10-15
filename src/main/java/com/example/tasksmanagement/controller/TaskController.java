@@ -1,7 +1,10 @@
 package com.example.tasksmanagement.controller;
 
+import com.example.tasksmanagement.dto.CustomerTaskSummaryResponse;
 import com.example.tasksmanagement.entity.Task;
+import com.example.tasksmanagement.entity.User;
 import com.example.tasksmanagement.lib.TaskStatus;
+import com.example.tasksmanagement.repository.UserRepository;
 import com.example.tasksmanagement.service.TaskService;
 
 import com.example.tasksmanagement.service.UserAdminService;
@@ -21,11 +24,14 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.util.List;
 import java.util.Map;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -33,11 +39,12 @@ public class TaskController {
 
     private final TaskService taskService;
     private final UserAdminService userAdminService;
-
+   // private final UserRepository userRepository;
 
     public TaskController(TaskService taskService, UserAdminService userAdminService) {
         this.taskService = taskService;
         this.userAdminService = userAdminService;
+//        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -205,5 +212,28 @@ public class TaskController {
         );
     }
 
+    @GetMapping("/customer-summary")
+    public List<CustomerTaskSummaryResponse> getCustomerTaskSummary(
+            Authentication authentication) {
+
+//        if (authentication == null || !authentication.isAuthenticated()) {
+//            throw new ResponseStatusException(
+//                    HttpStatus.UNAUTHORIZED,
+//                    "Bạn chưa đăng nhập"
+//            );
+//        }
+//
+//        User user = userRepository.findByUsername(authentication.getName())
+//                .orElseThrow(() -> new ResponseStatusException(
+//                        HttpStatus.UNAUTHORIZED,
+//                        "Không tìm thấy người dùng"
+//                ));
+
+        Long managerId = userAdminService.getUserIdByUsername(
+                authentication.getName()
+        );
+
+        return taskService.getCustomerTaskSummaryByManagerId(managerId);
+    }
 
 }

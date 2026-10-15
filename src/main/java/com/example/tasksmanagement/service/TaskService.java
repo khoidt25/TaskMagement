@@ -1,5 +1,6 @@
 package com.example.tasksmanagement.service;
 
+import com.example.tasksmanagement.dto.CustomerTaskSummaryResponse;
 import com.example.tasksmanagement.entity.ManagerProject;
 import com.example.tasksmanagement.entity.Task;
 import com.example.tasksmanagement.entity.User;
@@ -191,7 +192,10 @@ public class TaskService {
         );
     }
 
-
+    public List<CustomerTaskSummaryResponse> getCustomerTaskSummaryByManagerId(
+            Long managerId) {
+        return taskRepository.findCustomerTaskSummaryByManagerId(managerId);
+    }
 
 }
 
