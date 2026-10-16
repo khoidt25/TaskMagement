@@ -1,8 +1,10 @@
 package com.example.tasksmanagement.controller;
 
+import com.example.tasksmanagement.dto.MemberOptionResponse;
 import com.example.tasksmanagement.service.CurrentUserService;
 import com.example.tasksmanagement.service.ManagerAssignmentService;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +17,7 @@ public class ManagerScopeController {
 
     private final ManagerAssignmentService service;
     private final CurrentUserService currentUserService;
+
 
     public ManagerScopeController(ManagerAssignmentService service, CurrentUserService currentUserService) {
         this.service = service;
@@ -31,6 +34,12 @@ public class ManagerScopeController {
     public List<Long> getMyMembers() {
         Long managerId = currentUserService.getCurrentUserId();
         return service.getMemberIds(managerId);
+    }
+
+    @GetMapping("/membersOption")
+    public ResponseEntity<List<MemberOptionResponse>> getMembers(
+            @RequestParam Long managerId) {
+        return ResponseEntity.ok(service.getMembersOption(managerId));
     }
 
 }

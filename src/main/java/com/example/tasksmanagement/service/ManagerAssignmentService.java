@@ -3,6 +3,7 @@ package com.example.tasksmanagement.service;
 
 import com.example.tasksmanagement.dto.AssignMembersRequest;
 import com.example.tasksmanagement.dto.AssignProjectsRequest;
+import com.example.tasksmanagement.dto.MemberOptionResponse;
 import com.example.tasksmanagement.entity.AppRole;
 import com.example.tasksmanagement.entity.ManagerMember;
 import com.example.tasksmanagement.entity.ManagerProject;
@@ -231,4 +232,29 @@ public class ManagerAssignmentService {
         managerMemberRepository.deleteByManagerIdAndMemberId(
                 managerId, memberId);
     }
+
+    // Lay danh sach Member cua Manager dua vao option
+    @Transactional(readOnly = true)
+    public List<MemberOptionResponse> getMembersOption(Long managerId) {
+
+        requireRole(managerId, "MANAGER");
+
+        return managerMemberRepository.findByManagerId(managerId)
+                .stream()
+                .map(managerMember -> {
+                    Long memberId = managerMember.getMemberId();
+
+                    User member = userRepository.findById(memberId)
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Không tìm thấy member ID: " + memberId
+                            ));
+
+                    return new MemberOptionResponse(
+                            member.getUserId(),
+                            member.getFullName()
+                    );
+                })
+                .toList();
+    }
+
 }
