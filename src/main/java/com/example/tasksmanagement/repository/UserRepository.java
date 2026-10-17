@@ -21,4 +21,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByRoleIdAndUserStatusIgnoreCase(Long roleId, String userStatus);
 
+    @Query(value = """
+    SELECT u.*
+    FROM users u
+    JOIN app_roles r ON r.role_id = u.role_id
+    WHERE UPPER(r.role_code) = UPPER(:roleCode)
+      AND UPPER(u.user_status) = 'ACTIVE'
+    """, nativeQuery = true)
+    List<User> findActiveUsersByRoleCode(@Param("roleCode") String roleCode);
 }

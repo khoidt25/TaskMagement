@@ -10,6 +10,8 @@ public interface ManagerMemberRepository
 
     List<ManagerMember> findByManagerId(Long managerId);
 
+    List<ManagerMember> findByMemberId(Long memberId);
+
     boolean existsByManagerIdAndMemberId(
             Long managerId, Long memberId);
 
@@ -17,6 +19,5 @@ public interface ManagerMemberRepository
             Long managerId, Long memberId);
 
     void deleteByManagerId(Long managerId);
-
 
 }
