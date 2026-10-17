@@ -13,10 +13,6 @@ import java.util.List;
 public interface DashboardManagerRepository
         extends JpaRepository<Task, Long> {
 
-    /**
-     * Danh sách task quá hạn thuộc các dự án
-     * được gán cho Manager trong manager_projects.
-     */
     @Query("""
     SELECT DISTINCT t
     FROM Task t

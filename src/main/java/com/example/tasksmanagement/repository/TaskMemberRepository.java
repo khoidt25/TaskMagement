@@ -34,12 +34,6 @@ public interface TaskMemberRepository extends JpaRepository<TaskMember, Long> {
 
     boolean existsByTaskId(Long taskId);
 
-//    Optional<TaskMember> findByTaskMemberIdAndUser_Username(
-//            Long taskMemberId,
-//            String username
-//    );
-
-
     @Query("""
     SELECT tm
     FROM TaskMember tm

@@ -18,10 +18,5 @@ public interface ManagerProjectRepository
 
     void deleteByManagerId(Long managerId);
 
-//    List<ManagerProject> findByManagerId(Long managerId);
-
-//    List<ManagerProject> findByManagerId(Long managerId);
-
-   // long countDistinctByProjectId(Long projectId);
 
 }

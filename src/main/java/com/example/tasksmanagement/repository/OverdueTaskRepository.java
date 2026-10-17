@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 public interface OverdueTaskRepository
         extends Repository<com.example.tasksmanagement.entity.TaskMember, Long> {
 
-    // Manager xem task quá hạn của các Member mình quản lý
+
     @Query(
             value = """
             SELECT
@@ -64,7 +64,6 @@ public interface OverdueTaskRepository
             Pageable pageable
     );
 
-    // Member chỉ xem task quá hạn của chính mình
     @Query(
             value = """
             SELECT

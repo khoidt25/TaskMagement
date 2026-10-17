@@ -18,5 +18,5 @@ public interface ManagerMemberRepository
 
     void deleteByManagerId(Long managerId);
 
-    //List<ManagerMember> findByManagerId(Long managerId);
+
 }
