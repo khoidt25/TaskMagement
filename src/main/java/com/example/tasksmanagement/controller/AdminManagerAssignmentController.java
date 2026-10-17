@@ -32,7 +32,6 @@ public class AdminManagerAssignmentController {
     public ResponseEntity<?> assignProjects(
             @Valid @RequestBody AssignProjectsRequest request) {
 
-        // Thay bằng ID Admin lấy từ SecurityContext/JWT đã xác thực.
         Long adminId = currentUserService.getCurrentUserId();
 
         service.assignProjects(request, adminId);
@@ -60,21 +59,18 @@ public class AdminManagerAssignmentController {
         ));
     }
 
-    // GET /api/admin/manager-assignments/5/projects
     @GetMapping("/{managerId}/projects")
     @PreAuthorize("hasRole('ADMIN')")
     public List<Long> getProjects(@PathVariable Long managerId) {
         return service.getProjectIds(managerId);
     }
 
-    // GET /api/admin/manager-assignments/5/members
     @GetMapping("/{managerId}/members")
     @PreAuthorize("hasRole('ADMIN')")
     public List<Long> getMembers(@PathVariable Long managerId) {
         return service.getMemberIds(managerId);
     }
 
-    // DELETE /api/admin/manager-assignments/5/projects/2
     @DeleteMapping("/{managerId}/projects/{projectId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> removeProject(
@@ -86,7 +82,6 @@ public class AdminManagerAssignmentController {
                 Map.of("message", "Đã thu hồi quyền quản lý Project"));
     }
 
-    // DELETE /api/admin/manager-assignments/5/members/10
     @DeleteMapping("/{managerId}/members/{memberId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> removeMember(
