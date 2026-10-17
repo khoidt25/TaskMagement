@@ -9,7 +9,6 @@ import com.example.tasksmanagement.entity.ManagerMember;
 import com.example.tasksmanagement.entity.ManagerProject;
 import com.example.tasksmanagement.entity.User;
 import com.example.tasksmanagement.repository.*;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,25 +25,25 @@ public class ManagerAssignmentService {
     private final ManagerMemberRepository managerMemberRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final NotificationService notificationService;
 
     public ManagerAssignmentService(
             ManagerProjectRepository managerProjectRepository,
             ManagerMemberRepository managerMemberRepository,
             UserRepository userRepository,
             ProjectRepository projectRepository,
-            AppRoleRepository appRoleRepository) {
+            AppRoleRepository appRoleRepository,
+            NotificationService notificationService) {
 
         this.managerProjectRepository = managerProjectRepository;
         this.managerMemberRepository = managerMemberRepository;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
         this.appRoleRepository = appRoleRepository;
+        this.notificationService = notificationService;
     }
 
-    // =====================================================
-    // 1. KIỂM TRA USER VÀ ROLE
-    // =====================================================
-
+    // 1. Kiểm tra tài khoản và quyền
     private User requireRole(Long userId, String expectedRole) {
 
         User user = userRepository.findById(userId)
@@ -69,7 +68,7 @@ public class ManagerAssignmentService {
 
         if (!expectedRole.equalsIgnoreCase(actualRole)) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
+                    HttpStatus.FORBIDDEN,
                     "Tài khoản ID " + userId
                             + " phải có Role " + expectedRole);
         }
@@ -84,21 +83,16 @@ public class ManagerAssignmentService {
         return user;
     }
 
-    // =====================================================
-    // 2. ADMIN ASSIGN PROJECT CHO MANAGER
-    // =====================================================
-
+    // 2. Admin giao Project cho Manager
     @Transactional
     public void assignProjects(
             AssignProjectsRequest request,
             Long adminId) {
 
-        // Kiểm tra người thực hiện phải là Admin ACTIVE
         requireRole(adminId, "ADMIN");
 
-        // Kiểm tra người nhận phải là Manager ACTIVE
         Long managerId = request.managerId();
-        requireRole(managerId, "MANAGER");
+        User manager = requireRole(managerId, "MANAGER");
 
         List<Long> projectIds = request.projectIds()
                 .stream()
@@ -113,40 +107,42 @@ public class ManagerAssignmentService {
                         "Không tìm thấy Project ID: " + projectId);
             }
 
-            // Không tạo bản ghi trùng
             boolean alreadyAssigned =
                     managerProjectRepository
                             .existsByManagerIdAndProjectId(
                                     managerId, projectId);
 
-            if (!alreadyAssigned) {
-                ManagerProject assignment = new ManagerProject();
-
-                assignment.setManagerId(managerId);
-                assignment.setProjectId(projectId);
-                assignment.setAssignedBy(adminId);
-
-                managerProjectRepository.save(assignment);
+            if (alreadyAssigned) {
+                continue;
             }
+
+            ManagerProject assignment = new ManagerProject();
+            assignment.setManagerId(managerId);
+            assignment.setProjectId(projectId);
+            assignment.setAssignedBy(adminId);
+
+            managerProjectRepository.save(assignment);
+
+            notificationService.createNotification(
+                    manager.getUserId(),
+                    null,
+                    "PROJECT_ASSIGNED",
+                    "Được giao Project mới",
+                    "Bạn vừa được giao quản lý Project ID: " + projectId
+            );
         }
     }
 
-    // =====================================================
-    // 3. ADMIN ASSIGN MEMBER CHO MANAGER
-    // =====================================================
-
+    // 3. Admin giao Member cho Manager
     @Transactional
     public void assignMembers(
             AssignMembersRequest request,
             Long adminId) {
 
-        // Kiểm tra người thực hiện phải là Admin ACTIVE
         requireRole(adminId, "ADMIN");
 
         Long managerId = request.managerId();
-
-        // Kiểm tra người quản lý
-        requireRole(managerId, "MANAGER");
+        User manager = requireRole(managerId, "MANAGER");
 
         List<Long> memberIds = request.memberIds()
                 .stream()
@@ -161,30 +157,45 @@ public class ManagerAssignmentService {
                         "Manager không thể tự assign chính mình làm Member");
             }
 
-            // Chỉ cho phép tài khoản có Role MEMBER
-            requireRole(memberId, "MEMBER");
+            User member = requireRole(memberId, "MEMBER");
 
             boolean alreadyAssigned =
                     managerMemberRepository
                             .existsByManagerIdAndMemberId(
                                     managerId, memberId);
 
-            if (!alreadyAssigned) {
-                ManagerMember assignment = new ManagerMember();
-
-                assignment.setManagerId(managerId);
-                assignment.setMemberId(memberId);
-                assignment.setAssignedBy(adminId);
-
-                managerMemberRepository.save(assignment);
+            if (alreadyAssigned) {
+                continue;
             }
+
+            ManagerMember assignment = new ManagerMember();
+            assignment.setManagerId(managerId);
+            assignment.setMemberId(memberId);
+            assignment.setAssignedBy(adminId);
+
+            managerMemberRepository.save(assignment);
+
+            notificationService.createNotification(
+                    manager.getUserId(),
+                    null,
+                    "MANAGER_MEMBER_ASSIGNED",
+                    "Thêm Member vào nhóm quản lý",
+                    "Bạn vừa được phân công quản lý Member: "
+                            + member.getFullName()
+            );
+
+            notificationService.createNotification(
+                    member.getUserId(),
+                    null,
+                    "MANAGER_ASSIGNED",
+                    "Bạn có Manager mới",
+                    "Manager " + manager.getFullName()
+                            + " đã được phân công quản lý bạn."
+            );
         }
     }
 
-    // =====================================================
-    // 4. LẤY DANH SÁCH PROJECT CỦA MANAGER
-    // =====================================================
-
+    // 4. Lấy Project IDs của Manager
     @Transactional(readOnly = true)
     public List<Long> getProjectIds(Long managerId) {
 
@@ -196,10 +207,7 @@ public class ManagerAssignmentService {
                 .toList();
     }
 
-    // =====================================================
-    // 5. LẤY DANH SÁCH MEMBER CỦA MANAGER
-    // =====================================================
-
+    // 5. Lấy Member IDs của Manager
     @Transactional(readOnly = true)
     public List<Long> getMemberIds(Long managerId) {
 
@@ -211,29 +219,80 @@ public class ManagerAssignmentService {
                 .toList();
     }
 
-    // =====================================================
-    // 6. ADMIN THU HỒI QUYỀN PROJECT
-    // =====================================================
-
+    // 6. Thu hồi Project của Manager
     @Transactional
     public void removeProject(Long managerId, Long projectId) {
 
+        User manager = requireRole(managerId, "MANAGER");
+
+        boolean assigned =
+                managerProjectRepository
+                        .existsByManagerIdAndProjectId(
+                                managerId, projectId);
+
+        if (!assigned) {
+            return;
+        }
+
         managerProjectRepository.deleteByManagerIdAndProjectId(
                 managerId, projectId);
+
+        notificationService.createNotification(
+                manager.getUserId(),
+                null,
+                "PROJECT_UNASSIGNED",
+                "Project đã bị thu hồi",
+                "Quyền quản lý Project ID: " + projectId
+                        + " đã được thu hồi."
+        );
     }
 
-    // =====================================================
-    // 7. ADMIN THU HỒI QUYỀN MEMBER
-    // =====================================================
-
+    // 7. Gỡ Member khỏi Manager
     @Transactional
     public void removeMember(Long managerId, Long memberId) {
 
+        boolean assigned =
+                managerMemberRepository
+                        .existsByManagerIdAndMemberId(
+                                managerId, memberId);
+
+        if (!assigned) {
+            return;
+        }
+
+        User manager = userRepository.findById(managerId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Không tìm thấy Manager ID: " + managerId));
+
+        User member = userRepository.findById(memberId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Không tìm thấy Member ID: " + memberId));
+
         managerMemberRepository.deleteByManagerIdAndMemberId(
                 managerId, memberId);
+
+        notificationService.createNotification(
+                manager.getUserId(),
+                null,
+                "MANAGER_MEMBER_UNASSIGNED",
+                "Member đã được gỡ khỏi nhóm quản lý",
+                "Member " + member.getFullName()
+                        + " không còn thuộc nhóm quản lý của bạn."
+        );
+
+        notificationService.createNotification(
+                member.getUserId(),
+                null,
+                "MANAGER_UNASSIGNED",
+                "Quan hệ quản lý đã thay đổi",
+                "Bạn không còn thuộc nhóm quản lý của Manager "
+                        + manager.getFullName() + "."
+        );
     }
 
-    // Lay danh sach Member cua Manager dua vao option
+    // 8. Lấy danh sách Member options
     @Transactional(readOnly = true)
     public List<MemberOptionResponse> getMembersOption(Long managerId) {
 
@@ -245,9 +304,9 @@ public class ManagerAssignmentService {
                     Long memberId = managerMember.getMemberId();
 
                     User member = userRepository.findById(memberId)
-                            .orElseThrow(() -> new RuntimeException(
-                                    "Không tìm thấy member ID: " + memberId
-                            ));
+                            .orElseThrow(() -> new ResponseStatusException(
+                                    HttpStatus.NOT_FOUND,
+                                    "Không tìm thấy Member ID: " + memberId));
 
                     return new MemberOptionResponse(
                             member.getUserId(),
@@ -256,5 +315,4 @@ public class ManagerAssignmentService {
                 })
                 .toList();
     }
-
 }

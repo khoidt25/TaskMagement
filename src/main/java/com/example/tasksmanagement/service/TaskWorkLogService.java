@@ -3,8 +3,7 @@ package com.example.tasksmanagement.service;
 
 import com.example.tasksmanagement.dto.TaskWorkLogRequest;
 import com.example.tasksmanagement.dto.TaskWorkLogResponse;
-import com.example.tasksmanagement.entity.TaskMember;
-import com.example.tasksmanagement.entity.TaskWorkLog;
+import com.example.tasksmanagement.entity.*;
 import com.example.tasksmanagement.repository.TaskMemberRepository;
 import com.example.tasksmanagement.repository.TaskRepository;
 import com.example.tasksmanagement.repository.TaskWorkLogRepository;
@@ -20,6 +19,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.util.List;
 import com.example.tasksmanagement.dto.TaskWorkLogProjection;
+import com.example.tasksmanagement.repository.ManagerMemberRepository;
+import com.example.tasksmanagement.repository.UserRepository;
 
 @Service
 public class TaskWorkLogService {
@@ -28,12 +29,24 @@ public class TaskWorkLogService {
     private final TaskMemberRepository taskMemberRepository;
     private final TaskRepository taskRepository;
 
+    private final NotificationService notificationService;
+    private final ManagerMemberRepository managerMemberRepository;
+    private final UserRepository userRepository;
+
     public TaskWorkLogService(
             TaskWorkLogRepository workLogRepository,
-            TaskMemberRepository taskMemberRepository, TaskRepository taskRepository) {
+            TaskMemberRepository taskMemberRepository,
+            TaskRepository taskRepository,
+            NotificationService notificationService,
+            ManagerMemberRepository managerMemberRepository,
+            UserRepository userRepository) {
         this.workLogRepository = workLogRepository;
         this.taskMemberRepository = taskMemberRepository;
         this.taskRepository = taskRepository;
+        this.notificationService = notificationService;
+        this.managerMemberRepository = managerMemberRepository;
+        this.userRepository = userRepository;
+
     }
 
     @Transactional(readOnly = true)
@@ -82,7 +95,6 @@ public class TaskWorkLogService {
             String username,
             TaskWorkLogRequest request) {
 
-        // Chỉ cho phép lưu nhật ký cho task được giao cho chính mình.
         TaskMember taskMember = taskMemberRepository
                 .findAssignedTaskForUser(
                         request.getTaskMemberId(), username)
@@ -90,13 +102,22 @@ public class TaskWorkLogService {
                         HttpStatus.NOT_FOUND,
                         "Không tìm thấy task được giao hoặc bạn không có quyền truy cập"));
 
-        // Cùng task_member_id và work_date thì cập nhật bản ghi cũ.
-        // Nếu chưa tồn tại thì tạo bản ghi mới.
-        TaskWorkLog workLog = workLogRepository
+        var existing = workLogRepository
                 .findByTaskMember_TaskMemberIdAndWorkDate(
                         taskMember.getTaskMemberId(),
-                        request.getWorkDate())
-                .orElseGet(TaskWorkLog::new);
+                        request.getWorkDate());
+
+        boolean isNew = existing.isEmpty();
+
+        TaskWorkLog workLog = existing.orElseGet(TaskWorkLog::new);
+
+        boolean changed = isNew
+                || !java.util.Objects.equals(
+                workLog.getPlannedHours(), request.getPlannedHours())
+                || !java.util.Objects.equals(
+                workLog.getActualHours(), request.getActualHours())
+                || !java.util.Objects.equals(
+                workLog.getNote(), request.getNote());
 
         workLog.setTaskMember(taskMember);
         workLog.setWorkDate(request.getWorkDate());
@@ -105,6 +126,47 @@ public class TaskWorkLogService {
         workLog.setNote(request.getNote());
 
         TaskWorkLog saved = workLogRepository.save(workLog);
+
+        if (changed) {
+            String memberName = userRepository
+                    .findByUsername(username)
+                    .map(User::getFullName)
+                    .filter(name -> name != null && !name.isBlank())
+                    .orElse(username);
+
+            String taskName = "Task ID " + taskMember.getTaskId();
+
+            if (taskMember.getTaskId() != null) {
+                taskName = taskRepository.findById(taskMember.getTaskId())
+                        .map(Task::getTaskName)
+                        .filter(name -> name != null && !name.isBlank())
+                        .orElse(taskName);
+            }
+
+            String title = isNew
+                    ? "Member ghi nhận công việc"
+                    : "Member cập nhật nhật ký công việc";
+
+            String message = memberName
+                    + (isNew ? " đã ghi nhận công việc cho task \""
+                    : " đã cập nhật nhật ký công việc cho task \"")
+                    + taskName
+                    + "\" ngày " + request.getWorkDate() + ".";
+
+            List<ManagerMember> managers =
+                    managerMemberRepository.findByMemberId(
+                            taskMember.getUserId());
+
+            for (ManagerMember manager : managers) {
+                notificationService.createNotification(
+                        manager.getManagerId(),
+                        taskMember.getTaskId(),
+                        "WORK_LOG_UPDATED",
+                        title,
+                        message
+                );
+            }
+        }
 
         return toResponse(saved);
     }

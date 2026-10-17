@@ -3,6 +3,7 @@ package com.example.tasksmanagement.service;
 import com.example.tasksmanagement.dto.CustomerTaskSummaryResponse;
 import com.example.tasksmanagement.entity.ManagerProject;
 import com.example.tasksmanagement.entity.Task;
+import com.example.tasksmanagement.entity.TaskMember;
 import com.example.tasksmanagement.entity.User;
 import com.example.tasksmanagement.lib.TaskStatus;
 import com.example.tasksmanagement.repository.ManagerProjectRepository;
@@ -31,13 +32,15 @@ public class TaskService {
     private final TaskMemberRepository taskMemberRepository;
     private final UserRepository userRepository;
     private final ManagerProjectRepository managerProjectRepository;
+    private final NotificationService notificationService;
 
-    public TaskService(TaskRepository taskRepository, TaskMemberRepository taskMemberRepository, UserRepository userRepository, ManagerProjectRepository managerProjectRepository) {
+    public TaskService(TaskRepository taskRepository, TaskMemberRepository taskMemberRepository, UserRepository userRepository, ManagerProjectRepository managerProjectRepository, NotificationService notificationService) {
 
         this.taskRepository = taskRepository;
         this.taskMemberRepository = taskMemberRepository;
         this.userRepository = userRepository;
         this.managerProjectRepository = managerProjectRepository;
+        this.notificationService = notificationService;
     }
 
     public Page<Task> getAll(Pageable pageable) {
@@ -133,9 +136,21 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+    @Transactional
     public Optional<Task> update(Long id, Task request) {
-
         return taskRepository.findById(id).map(task -> {
+            String oldName = task.getTaskName();
+            LocalDate oldDeadline = task.getDeadline();
+            TaskStatus oldStatus = task.getStatus();
+
+            boolean nameChanged = !java.util.Objects.equals(
+                    oldName, request.getTaskName());
+
+            boolean deadlineChanged = !java.util.Objects.equals(
+                    oldDeadline, request.getDeadline());
+
+            boolean statusChanged = !java.util.Objects.equals(
+                    oldStatus, request.getStatus());
 
             task.setTaskCode(request.getTaskCode());
             task.setTaskName(request.getTaskName());
@@ -152,7 +167,51 @@ public class TaskService {
             task.setDescription(request.getDescription());
             task.setNote(request.getNote());
 
-            return taskRepository.save(task);
+            Task saved = taskRepository.save(task);
+
+            if (nameChanged || deadlineChanged || statusChanged) {
+                List<TaskMember> members =
+                        taskMemberRepository.findByTaskId(saved.getTaskId());
+
+                String title;
+                String message;
+
+                if (statusChanged
+                        && saved.getStatus() == TaskStatus.CANCELLED) {
+                    title = "Task đã bị hủy";
+                    message = "Task \"" + saved.getTaskName()
+                            + "\" đã bị hủy.";
+                } else if (deadlineChanged) {
+                    title = "Deadline task đã thay đổi";
+                    message = "Task \"" + saved.getTaskName()
+                            + "\" có deadline mới: "
+                            + saved.getDeadline() + ".";
+                } else if (statusChanged) {
+                    title = "Trạng thái task đã thay đổi";
+                    message = "Task \"" + saved.getTaskName()
+                            + "\" đã chuyển sang trạng thái "
+                            + saved.getStatus() + ".";
+                } else {
+                    title = "Task đã được cập nhật";
+                    message = "Thông tin task đã thay đổi: "
+                            + saved.getTaskName() + ".";
+                }
+
+                for (TaskMember member : members) {
+                    notificationService.createNotification(
+                            member.getUserId(),
+                            saved.getTaskId(),
+                            statusChanged
+                                    && saved.getStatus() == TaskStatus.CANCELLED
+                                    ? "TASK_CANCELLED"
+                                    : "TASK_UPDATED",
+                            title,
+                            message
+                    );
+                }
+            }
+
+            return saved;
         });
     }
 
