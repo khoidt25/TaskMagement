@@ -19,6 +19,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/task-work-logs")
@@ -95,5 +96,35 @@ public class TaskWorkLogController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);
+    }
+
+    @PreAuthorize("hasRole('MANAGER')")
+    @GetMapping("/manager/range")
+    public ResponseEntity<Page<TaskWorkLogProjection>> getTeamWorkLogs(
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate from,
+
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate to,
+
+            @RequestParam(defaultValue = "0")
+            @Min(0) int page,
+
+            @RequestParam(defaultValue = "10")
+            @Min(1) @Max(100) int size,
+
+            Authentication authentication) {
+
+        return ResponseEntity.ok(
+                workLogService.getTeamLogsByDateRange(
+                        authentication.getName(),
+                        from,
+                        to,
+                        page,
+                        size
+                )
+        );
     }
 }

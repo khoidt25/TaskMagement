@@ -27,4 +27,8 @@ public interface TaskWorkLogProjection {
     OffsetDateTime getCreatedAt();
 
     OffsetDateTime getUpdatedAt();
+
+    Long getMemberId();
+
+    String getMemberName();
 }

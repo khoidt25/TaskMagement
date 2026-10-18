@@ -200,4 +200,36 @@ public class TaskWorkLogService {
         return response;
     }
 
+    @Transactional(readOnly = true)
+    public Page<TaskWorkLogProjection> getTeamLogsByDateRange(
+            String managerUsername,
+            LocalDate from,
+            LocalDate to,
+            int page,
+            int size) {
+
+        if (from == null || to == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Vui lòng chọn ngày bắt đầu và ngày kết thúc"
+            );
+        }
+
+        if (from.isAfter(to)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Ngày bắt đầu không được lớn hơn ngày kết thúc"
+            );
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return workLogRepository.findTeamLogsByDateRange(
+                managerUsername,
+                from,
+                to,
+                pageable
+        );
+    }
+
 }

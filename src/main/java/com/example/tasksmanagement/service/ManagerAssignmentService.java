@@ -4,10 +4,7 @@ package com.example.tasksmanagement.service;
 import com.example.tasksmanagement.dto.AssignMembersRequest;
 import com.example.tasksmanagement.dto.AssignProjectsRequest;
 import com.example.tasksmanagement.dto.MemberOptionResponse;
-import com.example.tasksmanagement.entity.AppRole;
-import com.example.tasksmanagement.entity.ManagerMember;
-import com.example.tasksmanagement.entity.ManagerProject;
-import com.example.tasksmanagement.entity.User;
+import com.example.tasksmanagement.entity.*;
 import com.example.tasksmanagement.repository.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -84,6 +81,7 @@ public class ManagerAssignmentService {
     }
 
     // 2. Admin giao Project cho Manager
+    // Admin giao Project cho Manager
     @Transactional
     public void assignProjects(
             AssignProjectsRequest request,
@@ -101,11 +99,11 @@ public class ManagerAssignmentService {
 
         for (Long projectId : projectIds) {
 
-            if (!projectRepository.existsById(projectId)) {
-                throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Không tìm thấy Project ID: " + projectId);
-            }
+            Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Không tìm thấy Project ID: " + projectId
+                    ));
 
             boolean alreadyAssigned =
                     managerProjectRepository
@@ -128,9 +126,11 @@ public class ManagerAssignmentService {
                     null,
                     "PROJECT_ASSIGNED",
                     "Được giao Project mới",
-                    "Bạn vừa được giao quản lý Project ID: " + projectId
+                    "Bạn vừa được giao quản lý Project: "
+                            + project.getProjectName()
             );
         }
+
     }
 
     // 3. Admin giao Member cho Manager
@@ -227,22 +227,30 @@ public class ManagerAssignmentService {
 
         boolean assigned =
                 managerProjectRepository
-                        .existsByManagerIdAndProjectId(
-                                managerId, projectId);
+                        .existsByManagerIdAndProjectId(managerId, projectId);
 
         if (!assigned) {
             return;
         }
 
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Không tìm thấy Project ID: " + projectId
+                ));
+
+        String projectName = project.getProjectName();
+
         managerProjectRepository.deleteByManagerIdAndProjectId(
-                managerId, projectId);
+                managerId, projectId
+        );
 
         notificationService.createNotification(
                 manager.getUserId(),
                 null,
                 "PROJECT_UNASSIGNED",
                 "Project đã bị thu hồi",
-                "Quyền quản lý Project ID: " + projectId
+                "Quyền quản lý Project: " + projectName
                         + " đã được thu hồi."
         );
     }
