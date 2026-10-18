@@ -39,4 +39,10 @@ public interface NotificationRepository
            AND n.read = false
         """)
     int markAllAsRead(@Param("userId") Long userId);
+
+    boolean existsByUserIdAndTaskIdAndNotificationType(
+            Long userId,
+            Long taskId,
+            String notificationType
+    );
 }
