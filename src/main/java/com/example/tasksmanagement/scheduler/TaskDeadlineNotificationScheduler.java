@@ -23,6 +23,8 @@ public class TaskDeadlineNotificationScheduler {
     }
 
     // Chạy tự động lúc 08:00 mỗi ngày theo giờ Việt Nam
+//
+//    0 0 8 * * *
     @Scheduled(
             cron = "0 * * * * *",
             zone = "Asia/Ho_Chi_Minh"
