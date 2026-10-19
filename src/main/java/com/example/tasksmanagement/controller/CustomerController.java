@@ -2,9 +2,7 @@
 package com.example.tasksmanagement.controller;
 
 import com.example.tasksmanagement.entity.Customer;
-import com.example.tasksmanagement.entity.Project;
 import com.example.tasksmanagement.service.CustomerService;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -12,7 +10,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
 

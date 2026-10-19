@@ -15,8 +15,6 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-
-        // Cho phép Angular chạy trên các port localhost khác nhau.
         config.setAllowedOriginPatterns(
                 List.of("http://localhost:*", "http://127.0.0.1:*")
         );
