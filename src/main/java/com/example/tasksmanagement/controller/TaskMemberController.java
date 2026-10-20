@@ -4,7 +4,6 @@ import com.example.tasksmanagement.dto.TaskMemberResponse;
 import com.example.tasksmanagement.entity.TaskMember;
 import com.example.tasksmanagement.lib.TaskStatus;
 import com.example.tasksmanagement.service.TaskMemberService;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -12,14 +11,10 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
-
 import com.example.tasksmanagement.dto.MyAssignmentUpdateRequest;
 import org.springframework.security.core.Authentication;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -87,11 +82,6 @@ public class TaskMemberController {
         return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
     }
 
-    /**
-     * Lấy danh sách task được giao cho user có phân trang.
-     *
-     * GET /api/tasks/my/{userId}/page?page=0&size=10&sort=taskMemberId,desc
-     */
     @GetMapping("/my/{userId}/page")
     public ResponseEntity<Page<TaskMemberResponse>> getMyTasksPage(
             @PathVariable Long userId,
@@ -107,11 +97,6 @@ public class TaskMemberController {
         );
     }
 
-    /**
-     * Lấy danh sách task theo trạng thái có phân trang.
-     *
-     * GET /api/tasks/my/{userId}/status/{status}/page?page=0&size=10
-     */
     @GetMapping("/my/{userId}/status/{status}/page")
     public ResponseEntity<Page<TaskMemberResponse>> getMyTasksByStatusPage(
             @PathVariable Long userId,

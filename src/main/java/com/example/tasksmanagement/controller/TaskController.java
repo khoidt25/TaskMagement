@@ -1,4 +1,5 @@
 package com.example.tasksmanagement.controller;
+
 import com.example.tasksmanagement.entity.Task;
 import com.example.tasksmanagement.lib.TaskStatus;
 import com.example.tasksmanagement.service.TaskService;
@@ -11,10 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springdoc.core.annotations.ParameterObject;
+
 import java.time.LocalDate;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+
 import java.util.Map;
+
 import org.springframework.security.core.Authentication;
 
 @RestController
@@ -105,9 +110,7 @@ public class TaskController {
             return ResponseEntity.noContent().build();
 
         } catch (IllegalStateException e) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
         }
     }
 
@@ -127,71 +130,24 @@ public class TaskController {
 
     @GetMapping("/manager/my-tasks")
     @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<Page<Task>> getMyManagerTasks(
-            Authentication authentication,
-            @ParameterObject
-            @PageableDefault(
-                    page = 0,
-                    size = 10,
-                    sort = "taskId",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable) {
+    public ResponseEntity<Page<Task>> getMyManagerTasks(Authentication authentication, @ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<Task> tasks =
-                taskService.getTasksCreatedByManager(
-                        authentication.getName(),
-                        pageable
-                );
+        Page<Task> tasks = taskService.getTasksCreatedByManager(authentication.getName(), pageable);
 
         return ResponseEntity.ok(tasks);
     }
 
     @GetMapping("/manager/filter")
     @PreAuthorize("hasRole('MANAGER')")
-    public Page<Task> filterManagerTasks(
-            Authentication authentication,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) TaskStatus status,
-            @RequestParam(required = false) Long projectId,
-            @RequestParam(required = false) Long customerId,
-            @RequestParam(required = false) Long userId,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate deadlineFrom,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate deadlineTo,
-            @ParameterObject
-            @PageableDefault(
-                    page = 0,
-                    size = 10,
-                    sort = "taskId",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable) {
+    public Page<Task> filterManagerTasks(Authentication authentication, @RequestParam(required = false) String keyword, @RequestParam(required = false) TaskStatus status, @RequestParam(required = false) Long projectId, @RequestParam(required = false) Long customerId, @RequestParam(required = false) Long userId, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate deadlineFrom, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate deadlineTo, @ParameterObject @PageableDefault(page = 0, size = 10, sort = "taskId", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        // Cần đổi username thành ID của Manager từ database.
-        Long managerId = userAdminService.getUserIdByUsername(
-                authentication.getName()
-        );
+        Long managerId = userAdminService.getUserIdByUsername(authentication.getName());
 
-        if (deadlineFrom != null && deadlineTo != null
-                && deadlineFrom.isAfter(deadlineTo)) {
-            throw new IllegalArgumentException(
-                    "deadlineFrom must be before or equal to deadlineTo"
-            );
+        if (deadlineFrom != null && deadlineTo != null && deadlineFrom.isAfter(deadlineTo)) {
+            throw new IllegalArgumentException("deadlineFrom must be before or equal to deadlineTo");
         }
 
-        return taskService.filterManagerTasks(
-                managerId,
-                keyword,
-                status,
-                projectId,
-                customerId,
-                userId,
-                deadlineFrom,
-                deadlineTo,
-                pageable
-        );
+        return taskService.filterManagerTasks(managerId, keyword, status, projectId, customerId, userId, deadlineFrom, deadlineTo, pageable);
     }
 
 }
